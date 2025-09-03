@@ -16,10 +16,6 @@ import { bundledThemes } from 'shiki'
 const CONFIG_FILE = 'theme-config.json'
 const PACKAGE_FILE = 'package.json'
 
-// 简化版本 - 不需要主题翻译映射
-
-// 简化版本：不再需要描述生成函数
-
 /**
  * 分析所有可用的主题
  */
@@ -27,11 +23,9 @@ async function analyzeThemes() {
   console.log('🔍 分析 Shiki 主题中...')
 
   try {
-    // 直接获取主题名称列表，无需创建 highlighter
     const themeNames = Object.keys(bundledThemes)
     console.log(`✅ 发现 ${themeNames.length} 个主题`)
 
-    // 生成配置 - 简化版，只保留主题名称
     const sortedThemes = themeNames.sort()
 
     const configData = {
@@ -56,8 +50,6 @@ async function analyzeThemes() {
     throw error
   }
 }
-
-// 简化版本：不再需要类型推断
 
 /**
  * 获取 Shiki 版本
@@ -95,11 +87,6 @@ async function updatePackageJson(configData = null) {
 
   const packageJson = JSON.parse(fs.readFileSync(PACKAGE_FILE, 'utf8'))
 
-  // 创建备份
-  const backupPath = `${PACKAGE_FILE}.backup.${Date.now()}`
-  fs.writeFileSync(backupPath, JSON.stringify(packageJson, null, 2))
-  console.log(`💾 备份已创建: ${backupPath}`)
-
   // 更新配置
   const themeProperty = packageJson.contributes?.configuration?.properties?.['markdownThemePreview.currentTheme']
 
@@ -113,7 +100,7 @@ async function updatePackageJson(configData = null) {
 
   console.log(`📊 主题数量: ${oldCount} → ${newCount}`)
 
-  // 更新配置 - 简化版，只设置主题列表
+  // 更新配置
   themeProperty.enum = configData.enum
 
   // 更新描述

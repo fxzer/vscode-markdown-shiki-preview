@@ -17,6 +17,9 @@ export class MarkdownPreviewProvider implements vscode.WebviewPanelSerializer {
   // 滚动同步相关
   private _currentDocument: vscode.TextDocument | undefined
   private _scrollSyncDisposables: vscode.Disposable[] = []
+  private _scrollSource = 'none' // 'editor' | 'preview' | 'none'
+  private _scrollTimeout: NodeJS.Timeout | undefined
+  private _editorMap = new Map<string, vscode.TextEditor>() // URI到编辑器的映射
 
   constructor(private readonly _extensionUri: vscode.Uri) {
     this._md = new MarkdownIt({
@@ -106,7 +109,7 @@ export class MarkdownPreviewProvider implements vscode.WebviewPanelSerializer {
               vscode.window.showErrorMessage(message.text)
               break
             case 'scroll':
-              this.handlePreviewScroll(message.scrollPercentage)
+              this.handlePreviewScroll(message.scrollPercentage, message.source, message.timestamp)
               break
           }
         },
@@ -134,7 +137,7 @@ export class MarkdownPreviewProvider implements vscode.WebviewPanelSerializer {
             vscode.window.showErrorMessage(message.text)
             break
           case 'scroll':
-            this.handlePreviewScroll(message.scrollPercentage)
+            this.handlePreviewScroll(message.scrollPercentage, message.source, message.timestamp)
             break
         }
       },
@@ -369,32 +372,48 @@ export class MarkdownPreviewProvider implements vscode.WebviewPanelSerializer {
                     }
                 });
                 
-                // 滚动同步相关
+                // 滚动同步 - 带防抖和状态管理
                 let isScrollingFromEditor = false;
+                let scrollTimeout = null;
                 
-                // 滚动处理函数
+                // 获取文档内容的总高度
+                function getDocumentHeight() {
+                    return Math.max(
+                        document.body.scrollHeight,
+                        document.body.offsetHeight,
+                        document.documentElement.scrollHeight,
+                        document.documentElement.offsetHeight
+                    );
+                }
+                
+                // 获取视口高度
+                function getViewportHeight() {
+                    return Math.max(document.documentElement.clientHeight, window.innerHeight || 0);
+                }
+                
+                // 即时滚动处理
                 function handleScroll() {
                     if (isScrollingFromEditor) {
                         return;
                     }
                     
-                    // 计算滚动百分比
-                    const scrollTop = document.documentElement.scrollTop || document.body.scrollTop;
-                    const scrollHeight = document.documentElement.scrollHeight || document.body.scrollHeight;
-                    const clientHeight = document.documentElement.clientHeight || document.body.clientHeight;
+                    const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+                    const documentHeight = getDocumentHeight();
+                    const viewportHeight = getViewportHeight();
+                    const maxScrollTop = Math.max(0, documentHeight - viewportHeight);
                     
-                    const maxScrollTop = Math.max(0, scrollHeight - clientHeight);
-                    const scrollPercentage = maxScrollTop > 0 ? Math.max(0, Math.min(1, scrollTop / maxScrollTop)) : 0;
+                    const scrollPercentage = maxScrollTop > 0 ? 
+                        Math.max(0, Math.min(1, scrollTop / maxScrollTop)) : 0;
                     
-                    // 发送滚动事件到扩展
                     vscode.postMessage({
                         command: 'scroll',
-                        scrollPercentage: scrollPercentage
+                        scrollPercentage: scrollPercentage,
+                        source: 'preview'
                     });
                 }
                 
-                // 直接监听滚动事件，无防抖
-                document.addEventListener('scroll', handleScroll);
+                // 监听滚动事件
+                document.addEventListener('scroll', handleScroll, { passive: true });
                 
                 // 监听来自扩展的消息
                 window.addEventListener('message', event => {
@@ -402,23 +421,27 @@ export class MarkdownPreviewProvider implements vscode.WebviewPanelSerializer {
                     
                     switch (message.command) {
                         case 'scrollToPercentage':
+                            // 如果消息来自预览自身，跳过处理
+                            if (message.source === 'preview') {
+                                break;
+                            }
+                            
                             isScrollingFromEditor = true;
                             
-                            const scrollHeight = document.documentElement.scrollHeight || document.body.scrollHeight;
-                            const clientHeight = document.documentElement.clientHeight || document.body.clientHeight;
-                            const maxScrollTop = Math.max(0, scrollHeight - clientHeight);
+                            const documentHeight = getDocumentHeight();
+                            const viewportHeight = getViewportHeight();
+                            const maxScrollTop = Math.max(0, documentHeight - viewportHeight);
                             const targetScrollTop = Math.max(0, Math.min(maxScrollTop, maxScrollTop * message.percentage));
                             
-                            // 使用即时滚动，确保同步性
                             window.scrollTo({
                                 top: targetScrollTop,
                                 behavior: 'auto'
                             });
                             
-                            // 短暂延迟后重置标志
+                            // 延迟后重置标志，避免死循环
                             setTimeout(() => {
                                 isScrollingFromEditor = false;
-                            }, 50);
+                            }, 100);
                             break;
                     }
                 });
@@ -510,89 +533,112 @@ export class MarkdownPreviewProvider implements vscode.WebviewPanelSerializer {
     // 检查是否启用滚动同步
     const config = vscode.workspace.getConfiguration('markdownThemePreview')
     const syncScrollEnabled = config.get<boolean>('syncScroll', true)
+    if (!syncScrollEnabled) return
 
-    if (!syncScrollEnabled) {
-      return
-    }
+    // 防抖处理编辑器滚动事件
+    const scrollDisposable = vscode.window.onDidChangeTextEditorVisibleRanges((event) => {
+      if (event.textEditor.document === document && this._panel && this._scrollSource !== 'preview') {
+        this.syncEditorScrollToPreview(event.textEditor)
+      }
+    })
+    this._scrollSyncDisposables.push(scrollDisposable)
 
-    // 监听编辑器滚动事件
-    const activeEditor = vscode.window.activeTextEditor
-    if (activeEditor && activeEditor.document === document) {
-      const scrollDisposable = vscode.window.onDidChangeTextEditorVisibleRanges((event) => {
-        if (event.textEditor === activeEditor && this._panel) {
-          this.syncEditorScrollToPreview(event.textEditor)
+    // 监听编辑器变化
+    const editorChangeDisposable = vscode.window.onDidChangeVisibleTextEditors((editors) => {
+      const documentUri = document.uri.toString()
+      for (const editor of editors) {
+        if (editor.document.uri.toString() === documentUri && this._panel) {
+          this.syncEditorScrollToPreview(editor)
+          break
         }
-      })
-
-      this._scrollSyncDisposables.push(scrollDisposable)
-    }
+      }
+    })
+    this._scrollSyncDisposables.push(editorChangeDisposable)
   }
 
   private syncEditorScrollToPreview(editor: vscode.TextEditor) {
-    if (!this._panel || !this._currentDocument) {
+    if (!this._panel || !this._currentDocument || this._scrollSource === 'preview') {
       return
     }
 
     const config = vscode.workspace.getConfiguration('markdownThemePreview')
     const syncScrollEnabled = config.get<boolean>('syncScroll', true)
+    if (!syncScrollEnabled) return
 
-    if (!syncScrollEnabled) {
-      return
-    }
-
-    // 计算编辑器滚动百分比
     const visibleRange = editor.visibleRanges[0]
-    if (!visibleRange) {
-      return
-    }
+    if (!visibleRange) return
 
-    const totalLines = this._currentDocument.lineCount
-    if (totalLines === 0) {
-      return
-    }
+    const totalLines = editor.document.lineCount
+    if (totalLines === 0) return
 
-    // 改进滚动百分比计算：考虑可见区域的中间位置
-    const visibleStartLine = visibleRange.start.line
-    const visibleEndLine = visibleRange.end.line
-    const middleLine = Math.floor((visibleStartLine + visibleEndLine) / 2)
+    // 使用可见区域中间位置计算滚动比例
+    const middleLine = Math.floor((visibleRange.start.line + visibleRange.end.line) / 2)
+    const scrollRatio = Math.max(0, Math.min(1, middleLine / Math.max(1, totalLines - 1)))
 
-    // 使用更精确的百分比计算
-    const scrollPercentage = Math.max(0, Math.min(1, middleLine / (totalLines - 1)))
-
-    // 发送滚动命令到预览窗口
+    // 设置滚动源并发送消息
+    this._scrollSource = 'editor'
     this._panel.webview.postMessage({
       command: 'scrollToPercentage',
-      percentage: scrollPercentage,
+      percentage: scrollRatio,
+      source: 'editor'
     })
+
+    // 延迟重置滚动源，避免死循环
+    if (this._scrollTimeout) {
+      clearTimeout(this._scrollTimeout)
+    }
+    this._scrollTimeout = setTimeout(() => {
+      this._scrollSource = 'none'
+    }, 100)
   }
 
-  private handlePreviewScroll(scrollPercentage: number) {
+  private handlePreviewScroll(scrollPercentage: number, source?: string, timestamp?: number) {
+    if (!this._currentDocument || source === 'editor' || this._scrollSource === 'editor') {
+      return
+    }
+
     const config = vscode.workspace.getConfiguration('markdownThemePreview')
     const syncScrollEnabled = config.get<boolean>('syncScroll', true)
+    if (!syncScrollEnabled) return
 
-    if (!syncScrollEnabled || !this._currentDocument) {
-      return
-    }
+    // 使用文档URI查找对应的编辑器
+    const documentUri = this._currentDocument.uri.toString()
+    let targetEditor: vscode.TextEditor | undefined
 
-    const totalLines = this._currentDocument.lineCount
-    if (totalLines === 0) {
-      return
-    }
-
-    // 改进滚动位置计算：使用更精确的行号计算
-    const targetLine = Math.max(0, Math.min(totalLines - 1, Math.floor(scrollPercentage * (totalLines - 1))))
-
-    // 查找活动的编辑器
+    // 优先使用活动编辑器
     const activeEditor = vscode.window.activeTextEditor
-    if (activeEditor && activeEditor.document === this._currentDocument) {
-      try {
-        // 滚动编辑器到指定行，使用 InCenter 获得更好的视觉效果
-        const range = new vscode.Range(targetLine, 0, targetLine, 0)
-        activeEditor.revealRange(range, vscode.TextEditorRevealType.InCenter)
+    if (activeEditor && activeEditor.document.uri.toString() === documentUri) {
+      targetEditor = activeEditor
+    } else {
+      // 查找所有可见的编辑器
+      for (const editor of vscode.window.visibleTextEditors) {
+        if (editor.document.uri.toString() === documentUri) {
+          targetEditor = editor
+          break
+        }
       }
-      catch (error) {
-        console.error('Error syncing preview scroll to editor:', error)
-      }
+    }
+
+    if (!targetEditor) return
+
+    try {
+      const totalLines = this._currentDocument.lineCount
+      if (totalLines === 0) return
+
+      const targetLine = Math.min(
+        Math.floor(scrollPercentage * Math.max(0, totalLines - 1)),
+        totalLines - 1
+      )
+      const range = new vscode.Range(targetLine, 0, targetLine, 0)
+      
+      // 设置滚动源并即时滚动编辑器
+      this._scrollSource = 'preview'
+      targetEditor.revealRange(range, vscode.TextEditorRevealType.InCenterIfOutsideViewport)
+      
+      // 立即重置滚动源，无延迟
+      this._scrollSource = 'none'
+    } catch (error) {
+      console.error('Error syncing preview scroll to editor:', error)
     }
   }
 
@@ -600,6 +646,12 @@ export class MarkdownPreviewProvider implements vscode.WebviewPanelSerializer {
     // 清理滚动同步相关的监听器
     this._scrollSyncDisposables.forEach(disposable => disposable.dispose())
     this._scrollSyncDisposables = []
+    
+    // 清理滚动超时
+    if (this._scrollTimeout) {
+      clearTimeout(this._scrollTimeout)
+      this._scrollTimeout = undefined
+    }
   }
 
   dispose() {

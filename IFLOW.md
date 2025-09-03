@@ -25,8 +25,8 @@
 vscode-markdown-shiki-preview/
 ├── src/                          # 源代码目录
 │   ├── index.ts                  # 扩展入口点
-│   ├── markdownPreviewProvider.ts # Markdown 预览提供者
-│   ├── themeExplorer.ts          # 主题浏览器提供者
+│   ├── preview-provider.ts # Markdown 预览提供者
+│   ├── theme-explorer.ts          # 主题浏览器提供者
 │   ├── config.ts                 # 配置管理
 │   ├── utils.ts                  # 工具函数
 │   └── generated/                # 生成的元数据
@@ -112,13 +112,13 @@ pnpm run ext:publish
 - 注册命令、WebView 序列化器和主题浏览器
 - 监听配置变化和文档事件
 
-### 2. Markdown 预览提供者 (src/markdownPreviewProvider.ts)
+### 2. Markdown 预览提供者 (src/preview-provider.ts)
 - 管理 WebView 面板生命周期
 - 集成 Shiki 语法高亮
 - 实现滚动同步和内容更新防抖
 - 支持主题实时切换
 
-### 3. 主题浏览器 (src/themeExplorer.ts)
+### 3. 主题浏览器 (src/theme-explorer.ts)
 - 提供侧边栏主题树视图
 - 支持主题选择和预览
 - 与预览窗口同步状态
