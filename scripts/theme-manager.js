@@ -10,7 +10,8 @@
 
 import fs from 'node:fs'
 import path from 'node:path'
-import { bundledThemes, createHighlighter } from 'shiki'
+import process from 'node:process'
+import { bundledThemes } from 'shiki'
 
 const CONFIG_FILE = 'theme-config.json'
 const PACKAGE_FILE = 'package.json'
@@ -171,13 +172,14 @@ async function main() {
         console.log('\\n🎯 下一步: 运行 "npm run build" 重新构建扩展')
         break
 
-      case 'sync':
+      case 'sync': {
         console.log('🔄 同步主题配置...')
         const configData = await analyzeThemes()
         await updatePackageJson(configData)
         console.log('\\n✨ 同步完成!')
         console.log('🎯 下一步: 运行 "npm run build" 重新构建扩展')
         break
+      }
 
       case 'help':
       case '--help':

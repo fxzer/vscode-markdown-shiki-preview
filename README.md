@@ -38,7 +38,7 @@
 
 | Key                                 | Description                                             | Type      | Default          |
 | ----------------------------------- | ------------------------------------------------------- | --------- | ---------------- |
-| `markdownThemePreview.currentTheme` | Select from all available Shiki themes                  | `string`  | `"github-light"` |
+| `markdownThemePreview.currentTheme` | Select from all available Shiki themes (自动生成于 2025/9/3) | `string`  | `"github-light"` |
 | `markdownThemePreview.fontSize`     | Font size for preview content                           | `number`  | `14`             |
 | `markdownThemePreview.lineHeight`   | Line height for preview content                         | `number`  | `1.6`            |
 | `markdownThemePreview.syncScroll`   | Enable synchronous scrolling between editor and preview | `boolean` | `true`           |
@@ -49,8 +49,8 @@
 
 <!-- commands -->
 
-| Command                                 | Title                                         |
-| --------------------------------------- | --------------------------------------------- |
+| Command                                 | Title                                                |
+| --------------------------------------- | ---------------------------------------------------- |
 | `markdownThemePreview.showPreview`      | VSCode Markdown Shiki Preview: Open Markdown Preview |
 | `markdownThemePreview.switchTheme`      | VSCode Markdown Shiki Preview: Switch Theme          |
 | `markdownThemePreview.showThemePreview` | VSCode Markdown Shiki Preview: Show Theme Preview    |

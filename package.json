@@ -198,6 +198,7 @@
     "update-themes": "node scripts/theme-manager.js sync && npm run build",
     "analyze-themes": "node scripts/theme-manager.js analyze",
     "lint": "eslint .",
+    "lintfix": "eslint . --fix",
     "test": "vitest",
     "typecheck": "tsc --noEmit",
     "vscode:prepublish": "nr build",

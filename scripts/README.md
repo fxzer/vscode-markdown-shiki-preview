@@ -93,8 +93,8 @@ node scripts/theme-manager.js sync
 
 ```javascript
 const THEME_TRANSLATIONS = {
-    'new-theme': '新主题的中文名称',
-    // ...
+  'new-theme': '新主题的中文名称',
+  // ...
 }
 ```
 
