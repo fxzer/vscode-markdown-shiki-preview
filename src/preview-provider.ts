@@ -4,6 +4,32 @@ import MarkdownIt from 'markdown-it'
 import { bundledLanguages, bundledThemes, createHighlighter } from 'shiki'
 import * as vscode from 'vscode'
 
+// 性能监控工具
+class PerformanceMonitor {
+  private static timings: Map<string, number[]> = new Map()
+  
+  static start(label: string): void {
+    if (!this.timings.has(label)) {
+      this.timings.set(label, [])
+    }
+    this.timings.get(label)!.push(Date.now())
+  }
+  
+  static end(label: string): number {
+    const times = this.timings.get(label)
+    if (!times || times.length === 0) return 0
+    
+    const start = times.pop()!
+    const duration = Date.now() - start
+    console.log(`[Performance] ${label}: ${duration}ms`)
+    return duration
+  }
+  
+  static log(label: string, duration: number): void {
+    console.log(`[Performance] ${label}: ${duration}ms`)
+  }
+}
+
 export class MarkdownPreviewProvider implements vscode.WebviewPanelSerializer {
   private _panel: vscode.WebviewPanel | undefined
   private _md: MarkdownIt
@@ -13,6 +39,11 @@ export class MarkdownPreviewProvider implements vscode.WebviewPanelSerializer {
   // 内容更新防抖相关
   private lastUpdateDocumentUri: string | undefined // 记录最后更新的文档URI
   private debouncedUpdateContent: ReturnType<typeof debounce>
+  
+  // 性能优化相关
+  private _renderCache = new Map<string, string>() // 渲染结果缓存
+  private _themeCache = new Map<string, any>() // 主题数据缓存
+  private _isInitialized = false
 
   // 滚动同步相关
   private _currentDocument: vscode.TextDocument | undefined
@@ -30,19 +61,34 @@ export class MarkdownPreviewProvider implements vscode.WebviewPanelSerializer {
 
     // 初始化 lodash 防抖函数
     this.debouncedUpdateContent = debounce(this.performContentUpdate.bind(this), 300)
-
-    this.initializeHighlighter()
+    
+    // 延迟初始化高亮器，避免阻塞启动
+    setTimeout(() => {
+      if (!this._isInitialized) {
+        this.initializeHighlighter()
+      }
+    }, 100)
   }
 
   private async initializeHighlighter() {
+    PerformanceMonitor.start('initializeHighlighter')
     try {
+      console.log('[Performance] Starting Shiki highlighter initialization...')
+      
+      // 只加载必要的主题和语言，减少初始化时间
+      const themes = ['github-light', 'github-dark', 'min-light', 'min-dark']
+      const langs = ['javascript', 'typescript', 'python', 'java', 'css', 'html', 'json', 'markdown', 'bash', 'shell', 'yaml', 'xml', 'sql', 'go', 'rust', 'cpp', 'c', 'php', 'ruby']
+      
       this._highlighter = await createHighlighter({
-        themes: Object.keys(bundledThemes),
-        langs: Object.keys(bundledLanguages),
+        themes,
+        langs,
       })
 
       this._currentShikiTheme = 'github-light'
       this.setupMarkdownRenderer()
+      
+      PerformanceMonitor.end('initializeHighlighter')
+      console.log('[Performance] Shiki highlighter initialized successfully')
     }
     catch (error) {
       console.error('Failed to initialize Shiki highlighter:', error)
@@ -59,67 +105,98 @@ export class MarkdownPreviewProvider implements vscode.WebviewPanelSerializer {
           return `<pre><code>${code}</code></pre>`
 
         try {
-          return this._highlighter.codeToHtml(code, {
-            lang: lang || 'text',
-            theme: this._currentShikiTheme,
+          // 使用缓存键来避免重复渲染相同的代码块
+          const cacheKey = `${this._currentShikiTheme}-${lang || 'text'}-${code.length}-${this.hashCode(code)}`
+          const cached = this._renderCache.get(cacheKey)
+          if (cached) {
+            return cached
+          }
+
+          const result = this._highlighter.codeToHtml(code, {
+            lang: (lang || 'text') as any,
+            theme: this._currentShikiTheme as any,
           })
+          
+          // 缓存结果，限制缓存大小
+          if (this._renderCache.size > 1000) {
+            const firstKey = this._renderCache.keys().next().value
+            this._renderCache.delete(firstKey)
+          }
+          this._renderCache.set(cacheKey, result)
+          
+          return result
         }
         catch {
           return this._highlighter.codeToHtml(code, {
-            lang: 'text',
-            theme: this._currentShikiTheme,
+            lang: 'text' as any,
+            theme: this._currentShikiTheme as any,
           })
         }
       },
     })
   }
 
+  private hashCode(str: string): number {
+    let hash = 0
+    for (let i = 0; i < str.length; i++) {
+      const char = str.charCodeAt(i)
+      hash = ((hash << 5) - hash) + char
+      hash = hash & hash // 转换为32位整数
+    }
+    return Math.abs(hash)
+  }
+
   async showPreview(document: vscode.TextDocument) {
+    PerformanceMonitor.start('showPreview')
+    
     if (this._panel) {
       this._panel.reveal(vscode.ViewColumn.Two)
+      PerformanceMonitor.end('showPreview')
+      return
     }
-    else {
-      this._panel = vscode.window.createWebviewPanel(
-        'markdownPreview',
-        'Markdown Preview',
-        vscode.ViewColumn.Two,
-        {
-          enableScripts: true,
-          retainContextWhenHidden: true,
-          localResourceRoots: [this._extensionUri],
-        },
-      )
+    
+    console.log('[Performance] Creating new webview panel...')
+    this._panel = vscode.window.createWebviewPanel(
+      'markdownThemePreview',
+      'Markdown Preview',
+      vscode.ViewColumn.Two,
+      {
+        enableScripts: true,
+        retainContextWhenHidden: true,
+        localResourceRoots: [this._extensionUri],
+      },
+    )
 
-      // 应用当前配置的主题
-      const config = vscode.workspace.getConfiguration('markdownPreview')
-      const configTheme = config.get<string>('currentTheme', 'github-light')
-      if (configTheme !== this._currentShikiTheme) {
-        this._currentShikiTheme = configTheme
-        this.setupMarkdownRenderer()
-      }
-
-      this._panel.onDidDispose(() => {
-        this._panel = undefined
-      })
-
-      this._panel.webview.onDidReceiveMessage(
-        (message) => {
-          switch (message.command) {
-            case 'alert':
-              vscode.window.showErrorMessage(message.text)
-              break
-            case 'scroll':
-              this.handlePreviewScroll(message.scrollPercentage, message.source, message.timestamp)
-              break
-          }
-        },
-        undefined,
-        [],
-      )
+    // 应用当前配置的主题
+    const config = vscode.workspace.getConfiguration('markdownThemePreview')
+    const configTheme = config.get<string>('currentTheme', 'github-light')
+    if (configTheme !== this._currentShikiTheme) {
+      this._currentShikiTheme = configTheme
+      this.setupMarkdownRenderer()
     }
 
-    this.updateContent(document)
+    this._panel.onDidDispose(() => {
+      this._panel = undefined
+    })
+
+    this._panel.webview.onDidReceiveMessage(
+      (message) => {
+        switch (message.command) {
+          case 'alert':
+            vscode.window.showErrorMessage(message.text)
+            break
+          case 'scroll':
+            this.handlePreviewScroll(message.scrollPercentage, message.source, message.timestamp)
+            break
+        }
+      },
+      undefined,
+      [],
+    )
+
+    await this.updateContent(document)
     this.setupScrollSync(document)
+    PerformanceMonitor.end('showPreview')
   }
 
   async deserializeWebviewPanel(webviewPanel: vscode.WebviewPanel, _state: any) {
@@ -200,11 +277,15 @@ export class MarkdownPreviewProvider implements vscode.WebviewPanelSerializer {
   }
 
   async updateContent(document: vscode.TextDocument) {
+    PerformanceMonitor.start('updateContent')
+    
     if (!this._panel) {
+      PerformanceMonitor.end('updateContent')
       return
     }
 
     if (!this._highlighter) {
+      console.log('[Performance] Highlighter not ready, initializing...')
       await this.initializeHighlighter()
     }
 
@@ -216,7 +297,8 @@ export class MarkdownPreviewProvider implements vscode.WebviewPanelSerializer {
 
     // 避免重复更新同一文档的相同内容
     if (this.lastUpdateDocumentUri === documentUri && this._panel.webview.html.includes(content.substring(0, 100))) {
-      // 如果是同一个文档且内容没有显著变化，跳过更新
+      console.log('[Performance] Skipping duplicate content update')
+      PerformanceMonitor.end('updateContent')
       return
     }
 
@@ -227,8 +309,8 @@ export class MarkdownPreviewProvider implements vscode.WebviewPanelSerializer {
     const validThemes = Object.keys(bundledThemes)
 
     if (!validThemes.includes(currentTheme)) {
-      const config = vscode.workspace.getConfiguration('markdownPreview')
-      currentTheme = config.get<string>('currentTheme', 'github-light')
+      const config = vscode.workspace.getConfiguration('markdownThemePreview')
+      currentTheme = config.get<string>('currentTheme', 'github-light') || 'github-light' || 'github-light'
 
       if (!validThemes.includes(currentTheme)) {
         currentTheme = 'github-light'
@@ -240,19 +322,27 @@ export class MarkdownPreviewProvider implements vscode.WebviewPanelSerializer {
       this.setupMarkdownRenderer()
     }
 
+    console.log('[Performance] Rendering markdown content...')
+    const renderStart = Date.now()
     const html = this._md.render(content)
-    const config = vscode.workspace.getConfiguration('markdownPreview')
+    PerformanceMonitor.log('markdownRender', Date.now() - renderStart)
+
+    const config = vscode.workspace.getConfiguration('markdownThemePreview')
     const fontSize = config.get<number>('fontSize', 14)
     const lineHeight = config.get<number>('lineHeight', 1.6)
     const fontFamily = config.get<string>('fontFamily', 'system-ui, -apple-system, BlinkMacSystemFont, sans-serif')
 
+    console.log('[Performance] Generating HTML...')
+    const htmlStart = Date.now()
     this._panel.webview.html = this.getHtmlForWebview(html, currentTheme, fontSize, lineHeight, fontFamily)
+    PerformanceMonitor.log('generateHtml', Date.now() - htmlStart)
+    
+    this.lastUpdateDocumentUri = documentUri
+    PerformanceMonitor.end('updateContent')
   }
 
   private getHtmlForWebview(content: string, theme: string, fontSize: number, lineHeight: number, fontFamily: string): string {
     const nonce = this.getNonce()
-
-    // 获取主题CSS变量
     const themeStyles = this.getThemeCSS(theme)
 
     return `<!DOCTYPE html>
@@ -260,102 +350,28 @@ export class MarkdownPreviewProvider implements vscode.WebviewPanelSerializer {
         <head>
             <meta charset="UTF-8">
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline' ${this._extensionUri}; script-src 'nonce-${nonce}'; img-src data: https:;">
+            <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; script-src 'nonce-${nonce}'; img-src data: https:;">
             <title>Markdown Preview</title>
             <style>
                 ${themeStyles}
-                
-                body {
-                    font-size: ${fontSize}px;
-                    line-height: ${lineHeight};
-                    margin: 0;
-                    padding: 20px;
-                    font-family: ${fontFamily};
-                }
-                
-                .container {
-                    max-width: 900px;
-                    margin: 0 auto;
-                }
-                
-                /* Shiki styles */
-                .shiki {
-                    border-radius: 6px;
-                    padding: 16px;
-                    overflow-x: auto;
-                    margin: 16px 0;
-                }
-                
-                /* Markdown styles */
-                h1, h2, h3, h4, h5, h6 {
-                    margin-top: 24px;
-                    margin-bottom: 16px;
-                    font-weight: 600;
-                    line-height: 1.25;
-                }
-                
-                h1 { font-size: 2em; border-bottom: 1px solid var(--color-border-muted); padding-bottom: 0.3em; }
-                h2 { font-size: 1.5em; border-bottom: 1px solid var(--color-border-muted); padding-bottom: 0.3em; }
-                h3 { font-size: 1.25em; }
-                h4 { font-size: 1em; }
-                h5 { font-size: 0.875em; }
-                h6 { font-size: 0.85em; }
-                
-                p { margin-bottom: 16px; }
-                
-                blockquote {
-                    padding: 0 1em;
-                    border-left: 0.25em solid;
-                    margin: 0 0 16px 0;
-                    font-style: italic;
-                }
-                
-                ul, ol {
-                    padding-left: 2em;
-                    margin-bottom: 16px;
-                }
-                
-                li {
-                    margin-bottom: 0.25em;
-                }
-                
-                table {
-                    border-collapse: collapse;
-                    margin-bottom: 16px;
-                    width: 100%;
-                }
-                
-                th, td {
-                    padding: 6px 13px;
-                    border: 1px solid;
-                }
-                
-                th {
-                    font-weight: 600;
-                }
-                
-                code {
-                    padding: 0.2em 0.4em;
-                    margin: 0;
-                    font-size: 85%;
-                    border-radius: 6px;
-                }
-                
-                pre code {
-                    padding: 0;
-                    margin: 0;
-                    font-size: 100%;
-                    background-color: transparent;
-                    border-radius: 0;
-                }
-                
-                a {
-                    text-decoration: none;
-                }
-                
-                a:hover {
-                    text-decoration: underline;
-                }
+                body{font-size:${fontSize}px;line-height:${lineHeight};margin:0;padding:20px;font-family:${fontFamily}}
+                .container{max-width:900px;margin:0 auto}
+                .shiki{border-radius:6px;padding:16px;overflow-x:auto;margin:16px 0}
+                h1,h2,h3,h4,h5,h6{margin-top:24px;margin-bottom:16px;font-weight:600;line-height:1.25}
+                h1{font-size:2em;border-bottom:1px solid var(--color-border-muted);padding-bottom:.3em}
+                h2{font-size:1.5em;border-bottom:1px solid var(--color-border-muted);padding-bottom:.3em}
+                h3{font-size:1.25em}h4{font-size:1em}h5{font-size:.875em}h6{font-size:.85em}
+                p{margin-bottom:16px}
+                blockquote{padding:0 1em;border-left:.25em solid;margin:0 0 16px 0;font-style:italic}
+                ul,ol{padding-left:2em;margin-bottom:16px}
+                li{margin-bottom:.25em}
+                table{border-collapse:collapse;margin-bottom:16px;width:100%}
+                th,td{padding:6px 13px;border:1px solid}
+                th{font-weight:600}
+                code{padding:.2em .4em;margin:0;font-size:85%;border-radius:6px}
+                pre code{padding:0;margin:0;font-size:100%;background-color:transparent;border-radius:0}
+                a{text-decoration:none}
+                a:hover{text-decoration:underline}
             </style>
         </head>
         <body>
@@ -363,93 +379,14 @@ export class MarkdownPreviewProvider implements vscode.WebviewPanelSerializer {
                 ${content}
             </div>
             <script nonce="${nonce}">
-                // VS Code API
-                const vscode = acquireVsCodeApi();
-                
-                // 处理外部链接点击
-                document.addEventListener('click', event => {
-                    if (event.target.tagName === 'A' && event.target.href.startsWith('http')) {
-                        event.preventDefault();
-                        vscode.postMessage({
-                            command: 'openExternal',
-                            url: event.target.href
-                        });
-                    }
-                });
-                
-                // 滚动同步 - 带防抖和状态管理
-                let isScrollingFromEditor = false;
-                let scrollTimeout = null;
-                
-                // 获取文档内容的总高度
-                function getDocumentHeight() {
-                    return Math.max(
-                        document.body.scrollHeight,
-                        document.body.offsetHeight,
-                        document.documentElement.scrollHeight,
-                        document.documentElement.offsetHeight
-                    );
-                }
-                
-                // 获取视口高度
-                function getViewportHeight() {
-                    return Math.max(document.documentElement.clientHeight, window.innerHeight || 0);
-                }
-                
-                // 即时滚动处理
-                function handleScroll() {
-                    if (isScrollingFromEditor) {
-                        return;
-                    }
-                    
-                    const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
-                    const documentHeight = getDocumentHeight();
-                    const viewportHeight = getViewportHeight();
-                    const maxScrollTop = Math.max(0, documentHeight - viewportHeight);
-                    
-                    const scrollPercentage = maxScrollTop > 0 ? 
-                        Math.max(0, Math.min(1, scrollTop / maxScrollTop)) : 0;
-                    
-                    vscode.postMessage({
-                        command: 'scroll',
-                        scrollPercentage: scrollPercentage,
-                        source: 'preview'
-                    });
-                }
-                
-                // 监听滚动事件
-                document.addEventListener('scroll', handleScroll, { passive: true });
-                
-                // 监听来自扩展的消息
-                window.addEventListener('message', event => {
-                    const message = event.data;
-                    
-                    switch (message.command) {
-                        case 'scrollToPercentage':
-                            // 如果消息来自预览自身，跳过处理
-                            if (message.source === 'preview') {
-                                break;
-                            }
-                            
-                            isScrollingFromEditor = true;
-                            
-                            const documentHeight = getDocumentHeight();
-                            const viewportHeight = getViewportHeight();
-                            const maxScrollTop = Math.max(0, documentHeight - viewportHeight);
-                            const targetScrollTop = Math.max(0, Math.min(maxScrollTop, maxScrollTop * message.percentage));
-                            
-                            window.scrollTo({
-                                top: targetScrollTop,
-                                behavior: 'auto'
-                            });
-                            
-                            // 延迟后重置标志，避免死循环
-                            setTimeout(() => {
-                                isScrollingFromEditor = false;
-                            }, 100);
-                            break;
-                    }
-                });
+                const vscode=acquireVsCodeApi();
+                document.addEventListener('click',e=>{if(e.target.tagName==='A'&&e.target.href.startsWith('http')){e.preventDefault();vscode.postMessage({command:'openExternal',url:e.target.href})}});
+                let isScrollingFromEditor=false;
+                function getDocumentHeight(){return Math.max(document.body.scrollHeight,document.body.offsetHeight,document.documentElement.scrollHeight,document.documentElement.offsetHeight)}
+                function getViewportHeight(){return Math.max(document.documentElement.clientHeight,window.innerHeight||0)}
+                function handleScroll(){if(isScrollingFromEditor)return;const scrollTop=window.pageYOffset||document.documentElement.scrollTop,documentHeight=getDocumentHeight(),viewportHeight=getViewportHeight(),maxScrollTop=Math.max(0,documentHeight-viewportHeight),scrollPercentage=maxScrollTop>0?Math.max(0,Math.min(1,scrollTop/maxScrollTop)):0;vscode.postMessage({command:'scroll',scrollPercentage:scrollPercentage,source:'preview'})}
+                document.addEventListener('scroll',handleScroll,{passive:true});
+                window.addEventListener('message',event=>{const message=event.data;switch(message.command){case'scrollToPercentage':if(message.source==='preview')break;isScrollingFromEditor=true;const documentHeight=getDocumentHeight(),viewportHeight=getViewportHeight(),maxScrollTop=Math.max(0,documentHeight-viewportHeight),targetScrollTop=Math.max(0,Math.min(maxScrollTop,maxScrollTop*message.percentage));window.scrollTo({top:targetScrollTop,behavior:'auto'});setTimeout(()=>{isScrollingFromEditor=false},100);break}});
             </script>
         </body>
         </html>`
