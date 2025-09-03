@@ -1,11 +1,11 @@
 {
-  "publisher": "antfu",
-  "name": "ext-name",
-  "displayName": "ext-name",
-  "version": "0.0.0",
+  "publisher": "fxzer",
+  "name": "vscode-markdown-shiki-preview",
+  "displayName": " VSCode Markdown Shiki Preview",
+  "version": "1.0.0",
   "private": true,
   "packageManager": "pnpm@10.4.1",
-  "description": "",
+  "description": "A VSCode extension for previewing Markdown files with enhanced theme switching, keyboard navigation, and real-time preview",
   "author": "Anthony Fu <anthonyfu117@hotmail.com>",
   "license": "MIT",
   "funding": "https://github.com/sponsors/antfu",
@@ -20,8 +20,15 @@
   "sponsor": {
     "url": "https://github.com/sponsors/antfu"
   },
+  "keywords": [
+    "markdown",
+    "preview",
+    "theme",
+    "styling"
+  ],
   "categories": [
-    "Other"
+    "Other",
+    "Themes"
   ],
   "main": "./dist/index.js",
   "icon": "res/icon.png",
@@ -34,14 +41,153 @@
     "vscode": "^1.97.0"
   },
   "activationEvents": [
-    "onStartupFinished"
+    "onLanguage:markdown"
   ],
   "contributes": {
-    "commands": [],
+    "commands": [
+      {
+        "command": "markdownThemePreview.showPreview",
+        "title": "Open Markdown Preview",
+        "category": "VSCode Markdown Shiki Preview",
+        "icon": {
+          "light": "res/preview.svg",
+          "dark": "res/preview.svg"
+        }
+      },
+      {
+        "command": "markdownThemePreview.switchTheme",
+        "title": "Switch Theme",
+        "category": "VSCode Markdown Shiki Preview"
+      },
+      {
+        "command": "markdownThemePreview.showThemePreview",
+        "title": "Show Theme Preview",
+        "category": "VSCode Markdown Shiki Preview"
+      },
+      {
+        "command": "markdownThemePreview.selectTheme",
+        "title": "Select Theme",
+        "category": "VSCode Markdown Shiki Preview"
+      }
+    ],
+    "views": {
+      "explorer": [
+        {
+          "id": "markdownThemePreview.themeExplorer",
+          "name": "Theme Preview",
+          "when": "resourceExtname == .md"
+        }
+      ]
+    },
+    "menus": {
+      "editor/title": [
+        {
+          "command": "markdownThemePreview.showPreview",
+          "when": "resourceExtname == .md",
+          "group": "navigation"
+        }
+      ],
+      "commandPalette": [
+        {
+          "command": "markdownThemePreview.showPreview",
+          "when": "resourceExtname == .md"
+        },
+        {
+          "command": "markdownThemePreview.switchTheme"
+        }
+      ]
+    },
     "configuration": {
       "type": "object",
-      "title": "ext-name",
-      "properties": {}
+      "title": "VSCode Markdown Shiki Preview",
+      "properties": {
+        "markdownThemePreview.currentTheme": {
+          "type": "string",
+          "default": "github-light",
+          "description": "Select from all available Shiki themes (自动生成于 2025/9/3)",
+          "enum": [
+            "andromeeda",
+            "aurora-x",
+            "ayu-dark",
+            "catppuccin-frappe",
+            "catppuccin-latte",
+            "catppuccin-macchiato",
+            "catppuccin-mocha",
+            "dark-plus",
+            "dracula",
+            "dracula-soft",
+            "everforest-dark",
+            "everforest-light",
+            "github-dark",
+            "github-dark-default",
+            "github-dark-dimmed",
+            "github-dark-high-contrast",
+            "github-light",
+            "github-light-default",
+            "github-light-high-contrast",
+            "gruvbox-dark-hard",
+            "gruvbox-dark-medium",
+            "gruvbox-dark-soft",
+            "gruvbox-light-hard",
+            "gruvbox-light-medium",
+            "gruvbox-light-soft",
+            "houston",
+            "kanagawa-dragon",
+            "kanagawa-lotus",
+            "kanagawa-wave",
+            "laserwave",
+            "light-plus",
+            "material-theme",
+            "material-theme-darker",
+            "material-theme-lighter",
+            "material-theme-ocean",
+            "material-theme-palenight",
+            "min-dark",
+            "min-light",
+            "monokai",
+            "night-owl",
+            "nord",
+            "one-dark-pro",
+            "one-light",
+            "plastic",
+            "poimandres",
+            "red",
+            "rose-pine",
+            "rose-pine-dawn",
+            "rose-pine-moon",
+            "slack-dark",
+            "slack-ochin",
+            "snazzy-light",
+            "solarized-dark",
+            "solarized-light",
+            "synthwave-84",
+            "tokyo-night",
+            "vesper",
+            "vitesse-black",
+            "vitesse-dark",
+            "vitesse-light"
+          ]
+        },
+        "markdownThemePreview.fontSize": {
+          "type": "number",
+          "default": 14,
+          "minimum": 8,
+          "maximum": 32,
+          "description": "Font size for preview content"
+        },
+        "markdownThemePreview.lineHeight": {
+          "type": "number",
+          "default": 1.6,
+          "minimum": 1,
+          "maximum": 3,
+          "description": "Line height for preview content"
+        },
+        "markdownThemePreview.syncScroll": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable synchronous scrolling between editor and preview"
+        }
+      }
     }
   },
   "scripts": {
@@ -49,6 +195,8 @@
     "dev": "nr build --watch --sourcemap",
     "prepare": "nr update",
     "update": "vscode-ext-gen --output src/generated/meta.ts",
+    "update-themes": "node scripts/theme-manager.js sync && npm run build",
+    "analyze-themes": "node scripts/theme-manager.js analyze",
     "lint": "eslint .",
     "test": "vitest",
     "typecheck": "tsc --noEmit",
@@ -57,9 +205,17 @@
     "ext:package": "vsce package --no-dependencies",
     "ext:publish": "vsxpub --no-dependencies"
   },
+  "dependencies": {
+    "@shikijs/markdown-it": "^3.12.1",
+    "lodash-es": "^4.17.21",
+    "markdown-it": "^13.0.1",
+    "shiki": "^3.12.1"
+  },
   "devDependencies": {
     "@antfu/eslint-config": "^4.2.1",
     "@antfu/ni": "^23.3.1",
+    "@types/lodash-es": "^4.17.12",
+    "@types/markdown-it": "^14.1.2",
     "@types/node": "^22.13.4",
     "@types/vscode": "^1.97.0",
     "@vscode/vsce": "^3.2.2",

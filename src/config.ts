@@ -1,7 +1,14 @@
-import { defineConfigObject } from 'reactive-vscode'
-import * as Meta from './generated/meta'
+import { defineConfigs } from 'reactive-vscode'
 
-export const config = defineConfigObject<Meta.ScopedConfigKeyTypeMap>(
-  Meta.scopedConfigs.scope,
-  Meta.scopedConfigs.defaults,
-)
+// 使用 reactive-vscode 的配置系统
+export const {
+  currentTheme,
+  fontSize,
+  lineHeight,
+  syncScroll
+} = defineConfigs('markdownThemePreview', {
+  currentTheme: String,
+  fontSize: Number,
+  lineHeight: Number,
+  syncScroll: Boolean
+})
