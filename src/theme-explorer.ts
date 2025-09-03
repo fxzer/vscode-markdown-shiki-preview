@@ -1,4 +1,4 @@
-import type { MarkdownPreviewProvider } from './markdownPreviewProvider'
+import type { MarkdownPreviewProvider } from './markdown-preview-provider'
 import { debounce } from 'lodash-es'
 import { bundledThemes } from 'shiki'
 import * as vscode from 'vscode'

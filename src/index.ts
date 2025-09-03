@@ -4,8 +4,8 @@ import { window, workspace } from 'vscode'
 import * as vscode from 'vscode'
 import { currentTheme } from './config'
 import { displayName } from './generated/meta'
-import { MarkdownPreviewProvider } from './markdownPreviewProvider'
-import { ThemeExplorerProvider } from './themeExplorer'
+import { MarkdownPreviewProvider } from './markdown-preview-provider'
+import { ThemeExplorerProvider } from './theme-explorer'
 
 // 使用新模板的日志系统
 const logger = useLogger(displayName)
