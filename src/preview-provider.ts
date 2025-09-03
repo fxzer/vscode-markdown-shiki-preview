@@ -173,6 +173,10 @@ export class MarkdownPreviewProvider implements vscode.WebviewPanelSerializer {
     return this._panel !== undefined
   }
 
+  getCurrentDocument(): vscode.TextDocument | undefined {
+    return this._currentDocument
+  }
+
   // 带防抖的内容更新方法
   updateContentDebounced(document: vscode.TextDocument) {
     this.debouncedUpdateContent(document)
@@ -240,11 +244,12 @@ export class MarkdownPreviewProvider implements vscode.WebviewPanelSerializer {
     const config = vscode.workspace.getConfiguration('markdownThemePreview')
     const fontSize = config.get<number>('fontSize', 14)
     const lineHeight = config.get<number>('lineHeight', 1.6)
+    const fontFamily = config.get<string>('fontFamily', 'system-ui, -apple-system, BlinkMacSystemFont, sans-serif')
 
-    this._panel.webview.html = this.getHtmlForWebview(html, currentTheme, fontSize, lineHeight)
+    this._panel.webview.html = this.getHtmlForWebview(html, currentTheme, fontSize, lineHeight, fontFamily)
   }
 
-  private getHtmlForWebview(content: string, theme: string, fontSize: number, lineHeight: number): string {
+  private getHtmlForWebview(content: string, theme: string, fontSize: number, lineHeight: number, fontFamily: string): string {
     const nonce = this.getNonce()
 
     // 获取主题CSS变量
@@ -265,7 +270,7 @@ export class MarkdownPreviewProvider implements vscode.WebviewPanelSerializer {
                     line-height: ${lineHeight};
                     margin: 0;
                     padding: 20px;
-                    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Open Sans', 'Helvetica Neue', sans-serif;
+                    font-family: ${fontFamily};
                 }
                 
                 .container {

@@ -45,5 +45,6 @@
     "json",
     "jsonc",
     "yaml"
-  ]
+  ],
+  "editor.fontFamily": "'Fira Code', 'JetBrainsMono','Source Code Pro', 'Input Mono'"
 }

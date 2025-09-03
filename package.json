@@ -186,6 +186,31 @@
           "type": "boolean",
           "default": true,
           "description": "Enable synchronous scrolling between editor and preview"
+        },
+        "markdownThemePreview.fontFamily": {
+          "type": "string",
+          "default": "system-ui",
+          "description": "Font family for preview content. For other fonts, modify settings.json directly.",
+          "enum": [
+            "system-ui",
+            "Helvetica",
+            "Arial",
+            "serif",
+            "Georgia",
+            "Verdana",
+            "Tahoma",
+            "Menlo",
+            "Cascadia Code",
+            "Monaco",
+            "Courier",
+            "Consolas",
+            "Courier New",
+            "Input Mono",
+            "Source Code Pro",
+            "Microsoft YaHei",
+            "Fira Code",
+            "JetBrains Mono"
+          ]
         }
       }
     }

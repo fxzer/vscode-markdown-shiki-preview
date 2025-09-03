@@ -6,9 +6,11 @@ export const {
   fontSize,
   lineHeight,
   syncScroll,
+  fontFamily,
 } = defineConfigs('markdownThemePreview', {
   currentTheme: String,
   fontSize: Number,
   lineHeight: Number,
   syncScroll: Boolean,
+  fontFamily: String,
 })

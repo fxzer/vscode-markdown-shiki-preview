@@ -237,7 +237,7 @@ class Person implements User {
     themeExplorer.selectTheme(theme)
   })
 
-  // 监听配置变化，自动更新主题
+  // 监听配置变化，自动更新主题和字体设置
   ctx.subscriptions.push(
     workspace.onDidChangeConfiguration((e) => {
       if (e.affectsConfiguration('markdownThemePreview.currentTheme')) {
@@ -249,6 +249,19 @@ class Person implements User {
             provider.updateTheme(newTheme)
           }
           themeExplorer.refresh()
+        }
+      }
+      
+      // 监听字体大小、行高等配置变化
+      if (e.affectsConfiguration('markdownThemePreview.fontSize') || 
+          e.affectsConfiguration('markdownThemePreview.lineHeight') ||
+          e.affectsConfiguration('markdownThemePreview.fontFamily')) {
+        // 如果有活动的预览窗口，重新渲染内容
+        if (provider.hasActivePanel()) {
+          const document = provider.getCurrentDocument()
+          if (document) {
+            provider.updateContent(document)
+          }
         }
       }
     }),
