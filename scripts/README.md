@@ -47,7 +47,7 @@ node scripts/theme-manager.js sync
 2. **更新阶段** (`update`)
    - 读取 `theme-config.json`
    - 备份 `package.json`
-   - 更新 `markdownThemePreview.currentTheme` 配置
+   - 更新 `markdownPreview.currentTheme` 配置
    - 更新 `enum` 和 `enumDescriptions`
 
 3. **构建阶段** (通过 npm 脚本)

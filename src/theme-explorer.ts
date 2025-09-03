@@ -38,7 +38,7 @@ export class ThemeExplorerProvider implements vscode.TreeDataProvider<ThemeItem>
 
     const treeItem = new vscode.TreeItem(element.label, vscode.TreeItemCollapsibleState.None)
     treeItem.command = {
-      command: 'markdownThemePreview.selectTheme',
+      command: 'markdownPreview.selectTheme',
       title: 'Select Theme',
       arguments: [element.theme],
     }

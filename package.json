@@ -46,7 +46,7 @@
   "contributes": {
     "commands": [
       {
-        "command": "markdownThemePreview.showPreview",
+        "command": "markdownPreview.showPreview",
         "title": "Open Markdown Preview",
         "category": "VSCode Markdown Shiki Preview",
         "icon": {
@@ -55,17 +55,17 @@
         }
       },
       {
-        "command": "markdownThemePreview.switchTheme",
+        "command": "markdownPreview.switchTheme",
         "title": "Switch Theme",
         "category": "VSCode Markdown Shiki Preview"
       },
       {
-        "command": "markdownThemePreview.showThemePreview",
+        "command": "markdownPreview.showThemePreview",
         "title": "Show Theme Preview",
         "category": "VSCode Markdown Shiki Preview"
       },
       {
-        "command": "markdownThemePreview.selectTheme",
+        "command": "markdownPreview.selectTheme",
         "title": "Select Theme",
         "category": "VSCode Markdown Shiki Preview"
       }
@@ -73,7 +73,7 @@
     "views": {
       "explorer": [
         {
-          "id": "markdownThemePreview.themeExplorer",
+          "id": "markdownPreview.themeExplorer",
           "name": "Theme Preview",
           "when": "resourceExtname == .md"
         }
@@ -82,18 +82,18 @@
     "menus": {
       "editor/title": [
         {
-          "command": "markdownThemePreview.showPreview",
+          "command": "markdownPreview.showPreview",
           "when": "resourceExtname == .md",
           "group": "navigation"
         }
       ],
       "commandPalette": [
         {
-          "command": "markdownThemePreview.showPreview",
+          "command": "markdownPreview.showPreview",
           "when": "resourceExtname == .md"
         },
         {
-          "command": "markdownThemePreview.switchTheme"
+          "command": "markdownPreview.switchTheme"
         }
       ]
     },
@@ -101,7 +101,7 @@
       "type": "object",
       "title": "VSCode Markdown Shiki Preview",
       "properties": {
-        "markdownThemePreview.currentTheme": {
+        "markdownPreview.currentTheme": {
           "type": "string",
           "default": "github-light",
           "description": "Select from all available Shiki themes (自动生成于 2025/9/3)",
@@ -168,26 +168,26 @@
             "vitesse-light"
           ]
         },
-        "markdownThemePreview.fontSize": {
+        "markdownPreview.fontSize": {
           "type": "number",
           "default": 14,
           "minimum": 8,
           "maximum": 32,
           "description": "Font size for preview content"
         },
-        "markdownThemePreview.lineHeight": {
+        "markdownPreview.lineHeight": {
           "type": "number",
           "default": 1.6,
           "minimum": 1,
           "maximum": 3,
           "description": "Line height for preview content"
         },
-        "markdownThemePreview.syncScroll": {
+        "markdownPreview.syncScroll": {
           "type": "boolean",
           "default": true,
           "description": "Enable synchronous scrolling between editor and preview"
         },
-        "markdownThemePreview.fontFamily": {
+        "markdownPreview.fontFamily": {
           "type": "string",
           "default": "system-ui",
           "description": "Font family for preview content. For other fonts, modify settings.json directly.",

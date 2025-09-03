@@ -129,11 +129,11 @@ const { activate, deactivate } = defineExtension((ctx) => {
 
   // 注册 WebView 序列化器
   ctx.subscriptions.push(
-    window.registerWebviewPanelSerializer('markdownThemePreview', provider),
+    window.registerWebviewPanelSerializer('markdownPreview', provider),
   )
 
   // 注册主题资源管理器
-  const treeView = window.createTreeView('markdownThemePreview.themeExplorer', {
+  const treeView = window.createTreeView('markdownPreview.themeExplorer', {
     treeDataProvider: themeExplorer,
   })
 
@@ -141,7 +141,7 @@ const { activate, deactivate } = defineExtension((ctx) => {
   ctx.subscriptions.push({ dispose: () => themeExplorer.dispose() })
 
   // 注册命令
-  useCommand('markdownThemePreview.showPreview', () => {
+  useCommand('markdownPreview.showPreview', () => {
     const activeEditor = window.activeTextEditor
     if (!activeEditor || !activeEditor.document.fileName.endsWith('.md')) {
       window.showErrorMessage('Please open a Markdown file first')
@@ -150,7 +150,7 @@ const { activate, deactivate } = defineExtension((ctx) => {
     provider.showPreview(activeEditor.document)
   })
 
-  useCommand('markdownThemePreview.switchTheme', async () => {
+  useCommand('markdownPreview.switchTheme', async () => {
     try {
       await showEnhancedThemePicker(provider)
     }
@@ -159,7 +159,7 @@ const { activate, deactivate } = defineExtension((ctx) => {
     }
   })
 
-  useCommand('markdownThemePreview.showThemePreview', async () => {
+  useCommand('markdownPreview.showThemePreview', async () => {
     const sampleMarkdown = `# Theme Preview Sample
 
 This is a sample markdown to preview different themes with **Shiki syntax highlighting**.
@@ -233,14 +233,14 @@ class Person implements User {
     provider.showPreview(doc)
   })
 
-  useCommand('markdownThemePreview.selectTheme', (theme: string) => {
+  useCommand('markdownPreview.selectTheme', (theme: string) => {
     themeExplorer.selectTheme(theme)
   })
 
   // 监听配置变化，自动更新主题和字体设置
   ctx.subscriptions.push(
     workspace.onDidChangeConfiguration((e) => {
-      if (e.affectsConfiguration('markdownThemePreview.currentTheme')) {
+      if (e.affectsConfiguration('markdownPreview.currentTheme')) {
         // 检查是否是 themeExplorer 内部更新，避免循环触发
         if (!themeExplorer.isCurrentlyUpdating()) {
           const newTheme = currentTheme.value || 'github-light'
@@ -253,9 +253,9 @@ class Person implements User {
       }
       
       // 监听字体大小、行高等配置变化
-      if (e.affectsConfiguration('markdownThemePreview.fontSize') || 
-          e.affectsConfiguration('markdownThemePreview.lineHeight') ||
-          e.affectsConfiguration('markdownThemePreview.fontFamily')) {
+      if (e.affectsConfiguration('markdownPreview.fontSize') || 
+          e.affectsConfiguration('markdownPreview.lineHeight') ||
+          e.affectsConfiguration('markdownPreview.fontFamily')) {
         // 如果有活动的预览窗口，重新渲染内容
         if (provider.hasActivePanel()) {
           const document = provider.getCurrentDocument()

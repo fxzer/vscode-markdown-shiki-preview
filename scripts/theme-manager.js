@@ -88,10 +88,10 @@ async function updatePackageJson(configData = null) {
   const packageJson = JSON.parse(fs.readFileSync(PACKAGE_FILE, 'utf8'))
 
   // 更新配置
-  const themeProperty = packageJson.contributes?.configuration?.properties?.['markdownThemePreview.currentTheme']
+  const themeProperty = packageJson.contributes?.configuration?.properties?.['markdownPreview.currentTheme']
 
   if (!themeProperty) {
-    console.error('❌ 未找到 markdownThemePreview.currentTheme 配置项')
+    console.error('❌ 未找到 markdownPreview.currentTheme 配置项')
     return false
   }
 

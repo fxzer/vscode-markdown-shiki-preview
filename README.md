@@ -38,10 +38,10 @@
 
 | Key                                 | Description                                             | Type      | Default          |
 | ----------------------------------- | ------------------------------------------------------- | --------- | ---------------- |
-| `markdownThemePreview.currentTheme` | Select from all available Shiki themes (自动生成于 2025/9/3) | `string`  | `"github-light"` |
-| `markdownThemePreview.fontSize`     | Font size for preview content                           | `number`  | `14`             |
-| `markdownThemePreview.lineHeight`   | Line height for preview content                         | `number`  | `1.6`            |
-| `markdownThemePreview.syncScroll`   | Enable synchronous scrolling between editor and preview | `boolean` | `true`           |
+| `markdownPreview.currentTheme` | Select from all available Shiki themes (自动生成于 2025/9/3) | `string`  | `"github-light"` |
+| `markdownPreview.fontSize`     | Font size for preview content                           | `number`  | `14`             |
+| `markdownPreview.lineHeight`   | Line height for preview content                         | `number`  | `1.6`            |
+| `markdownPreview.syncScroll`   | Enable synchronous scrolling between editor and preview | `boolean` | `true`           |
 
 <!-- configs -->
 
@@ -51,10 +51,10 @@
 
 | Command                                 | Title                                                |
 | --------------------------------------- | ---------------------------------------------------- |
-| `markdownThemePreview.showPreview`      | VSCode Markdown Shiki Preview: Open Markdown Preview |
-| `markdownThemePreview.switchTheme`      | VSCode Markdown Shiki Preview: Switch Theme          |
-| `markdownThemePreview.showThemePreview` | VSCode Markdown Shiki Preview: Show Theme Preview    |
-| `markdownThemePreview.selectTheme`      | VSCode Markdown Shiki Preview: Select Theme          |
+| `markdownPreview.showPreview`      | VSCode Markdown Shiki Preview: Open Markdown Preview |
+| `markdownPreview.switchTheme`      | VSCode Markdown Shiki Preview: Switch Theme          |
+| `markdownPreview.showThemePreview` | VSCode Markdown Shiki Preview: Show Theme Preview    |
+| `markdownPreview.selectTheme`      | VSCode Markdown Shiki Preview: Select Theme          |
 
 <!-- commands -->
 

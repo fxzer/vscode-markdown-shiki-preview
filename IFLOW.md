@@ -131,19 +131,19 @@ pnpm run ext:publish
 
 | 配置项 | 类型 | 默认值 | 描述 |
 |--------|------|--------|------|
-| `markdownThemePreview.currentTheme` | string | "github-light" | 当前选择的主题 |
-| `markdownThemePreview.fontSize` | number | 14 | 预览内容字体大小 |
-| `markdownThemePreview.lineHeight` | number | 1.6 | 预览内容行高 |
-| `markdownThemePreview.syncScroll` | boolean | true | 启用同步滚动 |
+| `markdownPreview.currentTheme` | string | "github-light" | 当前选择的主题 |
+| `markdownPreview.fontSize` | number | 14 | 预览内容字体大小 |
+| `markdownPreview.lineHeight` | number | 1.6 | 预览内容行高 |
+| `markdownPreview.syncScroll` | boolean | true | 启用同步滚动 |
 
 ## 扩展命令
 
 | 命令 ID | 标题 | 描述 |
 |---------|------|------|
-| `markdownThemePreview.showPreview` | Open Markdown Preview | 打开 Markdown 预览 |
-| `markdownThemePreview.switchTheme` | Switch Theme | 切换主题（带键盘导航） |
-| `markdownThemePreview.showThemePreview` | Show Theme Preview | 显示主题预览示例 |
-| `markdownThemePreview.selectTheme` | Select Theme | 选择特定主题 |
+| `markdownPreview.showPreview` | Open Markdown Preview | 打开 Markdown 预览 |
+| `markdownPreview.switchTheme` | Switch Theme | 切换主题（带键盘导航） |
+| `markdownPreview.showThemePreview` | Show Theme Preview | 显示主题预览示例 |
+| `markdownPreview.selectTheme` | Select Theme | 选择特定主题 |
 
 ## 开发约定
 

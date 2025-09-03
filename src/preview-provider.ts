@@ -80,7 +80,7 @@ export class MarkdownPreviewProvider implements vscode.WebviewPanelSerializer {
     }
     else {
       this._panel = vscode.window.createWebviewPanel(
-        'markdownThemePreview',
+        'markdownPreview',
         'Markdown Preview',
         vscode.ViewColumn.Two,
         {
@@ -91,7 +91,7 @@ export class MarkdownPreviewProvider implements vscode.WebviewPanelSerializer {
       )
 
       // 应用当前配置的主题
-      const config = vscode.workspace.getConfiguration('markdownThemePreview')
+      const config = vscode.workspace.getConfiguration('markdownPreview')
       const configTheme = config.get<string>('currentTheme', 'github-light')
       if (configTheme !== this._currentShikiTheme) {
         this._currentShikiTheme = configTheme
@@ -227,7 +227,7 @@ export class MarkdownPreviewProvider implements vscode.WebviewPanelSerializer {
     const validThemes = Object.keys(bundledThemes)
 
     if (!validThemes.includes(currentTheme)) {
-      const config = vscode.workspace.getConfiguration('markdownThemePreview')
+      const config = vscode.workspace.getConfiguration('markdownPreview')
       currentTheme = config.get<string>('currentTheme', 'github-light')
 
       if (!validThemes.includes(currentTheme)) {
@@ -241,7 +241,7 @@ export class MarkdownPreviewProvider implements vscode.WebviewPanelSerializer {
     }
 
     const html = this._md.render(content)
-    const config = vscode.workspace.getConfiguration('markdownThemePreview')
+    const config = vscode.workspace.getConfiguration('markdownPreview')
     const fontSize = config.get<number>('fontSize', 14)
     const lineHeight = config.get<number>('lineHeight', 1.6)
     const fontFamily = config.get<string>('fontFamily', 'system-ui, -apple-system, BlinkMacSystemFont, sans-serif')
@@ -536,7 +536,7 @@ export class MarkdownPreviewProvider implements vscode.WebviewPanelSerializer {
     this._currentDocument = document
 
     // 检查是否启用滚动同步
-    const config = vscode.workspace.getConfiguration('markdownThemePreview')
+    const config = vscode.workspace.getConfiguration('markdownPreview')
     const syncScrollEnabled = config.get<boolean>('syncScroll', true)
     if (!syncScrollEnabled) return
 
@@ -566,7 +566,7 @@ export class MarkdownPreviewProvider implements vscode.WebviewPanelSerializer {
       return
     }
 
-    const config = vscode.workspace.getConfiguration('markdownThemePreview')
+    const config = vscode.workspace.getConfiguration('markdownPreview')
     const syncScrollEnabled = config.get<boolean>('syncScroll', true)
     if (!syncScrollEnabled) return
 
@@ -602,7 +602,7 @@ export class MarkdownPreviewProvider implements vscode.WebviewPanelSerializer {
       return
     }
 
-    const config = vscode.workspace.getConfiguration('markdownThemePreview')
+    const config = vscode.workspace.getConfiguration('markdownPreview')
     const syncScrollEnabled = config.get<boolean>('syncScroll', true)
     if (!syncScrollEnabled) return
 
