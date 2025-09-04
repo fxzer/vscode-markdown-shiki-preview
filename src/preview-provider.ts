@@ -521,7 +521,7 @@ export class MarkdownPreviewProvider implements vscode.WebviewPanelSerializer {
                         return cachedViewportHeight;
                     }
                     
-                    cachedViewportHeight = Math.max(document.documentElement.clientHeight, window.innerHeight || 0);
+                    cachedViewportHeight = Math.max(document.documentElement.clientHeight, (typeof window !== 'undefined' ? window.innerHeight : 0) || 0);
                     return cachedViewportHeight;
                 }
                 
@@ -531,7 +531,7 @@ export class MarkdownPreviewProvider implements vscode.WebviewPanelSerializer {
                         return;
                     }
                     
-                    const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+                    const scrollTop = (typeof window !== 'undefined' ? window.pageYOffset : 0) || document.documentElement.scrollTop;
                     const documentHeight = getDocumentHeight();
                     const viewportHeight = getViewportHeight();
                     const maxScrollTop = Math.max(0, documentHeight - viewportHeight);
@@ -569,14 +569,17 @@ export class MarkdownPreviewProvider implements vscode.WebviewPanelSerializer {
                 document.addEventListener('scroll', debouncedHandleScroll, { passive: true });
                 
                 // 监听窗口大小变化，清除高度缓存
-                window.addEventListener('resize', () => {
-                    cachedDocumentHeight = 0;
-                    cachedViewportHeight = 0;
-                    heightCacheTime = 0;
-                }, { passive: true });
+                if (typeof window !== 'undefined') {
+                    window.addEventListener('resize', () => {
+                        cachedDocumentHeight = 0;
+                        cachedViewportHeight = 0;
+                        heightCacheTime = 0;
+                    }, { passive: true });
+                }
                 
                 // 监听来自扩展的消息
-                window.addEventListener('message', event => {
+                if (typeof window !== 'undefined') {
+                    window.addEventListener('message', event => {
                     const message = event.data;
                     
                     switch (message.command) {
@@ -593,10 +596,12 @@ export class MarkdownPreviewProvider implements vscode.WebviewPanelSerializer {
                             const maxScrollTop = Math.max(0, documentHeight - viewportHeight);
                             const targetScrollTop = Math.max(0, Math.min(maxScrollTop, maxScrollTop * message.percentage));
                             
-                            window.scrollTo({
-                                top: targetScrollTop,
-                                behavior: 'auto'
-                            });
+                            if (typeof window !== 'undefined') {
+                                window.scrollTo({
+                                    top: targetScrollTop,
+                                    behavior: 'auto'
+                                });
+                            }
                             
                             // 延迟后重置标志，避免死循环，与编辑器端保持一致的延迟时间
                             setTimeout(() => {
@@ -604,7 +609,8 @@ export class MarkdownPreviewProvider implements vscode.WebviewPanelSerializer {
                             }, 150);
                             break;
                     }
-                });
+                    });
+                }
             </script>
         </body>
         </html>`

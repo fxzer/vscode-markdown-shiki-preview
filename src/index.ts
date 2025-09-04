@@ -64,13 +64,16 @@ async function showEnhancedThemePicker(provider: MarkdownPreviewProvider): Promi
         try {
           // 确保预览窗口已打开
           const activeEditor = window.activeTextEditor
-          if (activeEditor && activeEditor.document.fileName.endsWith('.md')) {
-            // 如果没有预览窗口，先打开它
-            if (!provider.hasActivePanel()) {
-              provider.showPreview(activeEditor.document)
-              // 等待预览窗口创建完成
-              await new Promise(resolve => setTimeout(resolve, 100))
-            }
+          // 如果有预览窗口，实时预览主题，但不保存到配置
+          if (provider.hasActivePanel()) {
+          // 实时预览主题，但不保存到配置
+            await provider.updateTheme(selectedTheme)
+          }
+          else if (activeEditor && activeEditor.document.fileName.endsWith('.md')) {
+          // 如果没有预览窗口，先打开它
+            provider.showPreview(activeEditor.document)
+            // 等待预览窗口创建完成
+            await new Promise(resolve => setTimeout(resolve, 100))
 
             // 实时预览主题，但不保存到配置
             await provider.updateTheme(selectedTheme)
@@ -159,83 +162,6 @@ const { activate, deactivate } = defineExtension((ctx) => {
     }
   })
 
-  useCommand('markdownPreview.showThemePreview', async () => {
-    const sampleMarkdown = `# Theme Preview Sample
-
-This is a sample markdown to preview different themes with **Shiki syntax highlighting**.
-
-## Code Examples
-
-### JavaScript
-\`\`\`javascript
-function greet(name) {
-    console.log(\`Hello, \${name}!\`);
-    return \`Welcome, \${name}\`;
-}
-
-const user = 'Developer';
-greet(user);
-\`\`\`
-
-### TypeScript
-\`\`\`typescript
-interface User {
-    name: string;
-    age: number;
-    email?: string;
-}
-
-class Person implements User {
-    constructor(public name: string, public age: number) {}
-    
-    greet() {
-        return \`Hi, I'm \${this.name} and I'm \${this.age} years old.\`;
-    }
-}
-\`\`\`
-
-### CSS
-\`\`\`css
-.container {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-}
-\`\`\`
-
-## Markdown Features
-
-- **Bold text**
-- *Italic text*
-- \`Inline code\`
-- [Links](https://github.com)
-
-> This is a blockquote example
-
-| Feature | Supported |
-|---------|-----------|
-| Syntax Highlighting | ✅ |
-| Theme Switching | ✅ |
-| Live Preview | ✅ |
-
-- [x] Task 1 completed
-- [ ] Task 2 pending
-- [ ] Task 3 todo
-`
-
-    const doc = await workspace.openTextDocument({
-      language: 'markdown',
-      content: sampleMarkdown,
-    })
-
-    await window.showTextDocument(doc, vscode.ViewColumn.One)
-    provider.showPreview(doc)
-  })
-
-  useCommand('markdownPreview.selectTheme', (theme: string) => {
-    themeExplorer.selectTheme(theme)
-  })
 
   // 监听配置变化，自动更新主题和字体设置
   ctx.subscriptions.push(
@@ -251,11 +177,11 @@ class Person implements User {
           themeExplorer.refresh()
         }
       }
-      
+
       // 监听字体大小、行高等配置变化
-      if (e.affectsConfiguration('markdownPreview.fontSize') || 
-          e.affectsConfiguration('markdownPreview.lineHeight') ||
-          e.affectsConfiguration('markdownPreview.fontFamily')) {
+      if (e.affectsConfiguration('markdownPreview.fontSize')
+        || e.affectsConfiguration('markdownPreview.lineHeight')
+        || e.affectsConfiguration('markdownPreview.fontFamily')) {
         // 如果有活动的预览窗口，重新渲染内容
         if (provider.hasActivePanel()) {
           const document = provider.getCurrentDocument()

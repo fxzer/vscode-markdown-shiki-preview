@@ -142,8 +142,6 @@ pnpm run ext:publish
 |---------|------|------|
 | `markdownPreview.showPreview` | Open Markdown Preview | 打开 Markdown 预览 |
 | `markdownPreview.switchTheme` | Switch Theme | 切换主题（带键盘导航） |
-| `markdownPreview.showThemePreview` | Show Theme Preview | 显示主题预览示例 |
-| `markdownPreview.selectTheme` | Select Theme | 选择特定主题 |
 
 ## 开发约定
 

@@ -15,57 +15,6 @@
 
 ## 使用方法
 
-### 主题选择
-
-1. **通过设置面板**:
-   - 打开 VS Code 设置 (Ctrl/Cmd + ,)
-   - 搜索 "Markdown Theme Preview"
-   - 在 "Current Theme" 下拉列表中选择你喜欢的主题
-
-2. **通过命令面板**:
-   - 按 Ctrl/Cmd + Shift + P 打开命令面板
-   - 输入 "Switch Theme" 并选择
-   - 使用方向键预览不同主题，回车确认
-
-3. **通过侧边栏**:
-   - 打开任意 Markdown 文件
-   - 在侧边栏找到 "Theme Preview" 面板
-   - 点击任意主题进行预览
-
-## Configurations
-
-<!-- configs -->
-
-| Key                                 | Description                                             | Type      | Default          |
-| ----------------------------------- | ------------------------------------------------------- | --------- | ---------------- |
-| `markdownPreview.currentTheme` | Select from all available Shiki themes (自动生成于 2025/9/3) | `string`  | `"github-light"` |
-| `markdownPreview.fontSize`     | Font size for preview content                           | `number`  | `14`             |
-| `markdownPreview.lineHeight`   | Line height for preview content                         | `number`  | `1.6`            |
-| `markdownPreview.syncScroll`   | Enable synchronous scrolling between editor and preview | `boolean` | `true`           |
-
-<!-- configs -->
-
-## Commands
-
-<!-- commands -->
-
-| Command                                 | Title                                                |
-| --------------------------------------- | ---------------------------------------------------- |
-| `markdownPreview.showPreview`      | VSCode Markdown Shiki Preview: Open Markdown Preview |
-| `markdownPreview.switchTheme`      | VSCode Markdown Shiki Preview: Switch Theme          |
-| `markdownPreview.showThemePreview` | VSCode Markdown Shiki Preview: Show Theme Preview    |
-| `markdownPreview.selectTheme`      | VSCode Markdown Shiki Preview: Select Theme          |
-
-<!-- commands -->
-
-## Sponsors
-
-<p align="center">
-  <a href="https://cdn.jsdelivr.net/gh/antfu/static/sponsors.svg">
-    <img src='https://cdn.jsdelivr.net/gh/antfu/static/sponsors.png'/>
-  </a>
-</p>
-
 ## License
 
-[MIT](./LICENSE.md) License © 2022 [Anthony Fu](https://github.com/antfu)
+[MIT](./LICENSE.md) License © 2025 [fxzer](https://github.com/fxzer)
