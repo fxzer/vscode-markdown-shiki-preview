@@ -391,26 +391,45 @@ export class MarkdownPreviewProvider implements vscode.WebviewPanelSerializer {
                     }
                 });
                 
-                // 滚动同步 - 带防抖和状态管理
+                // 滚动同步 - 优化版本，带防抖、阈值控制和缓存
                 let isScrollingFromEditor = false;
                 let scrollTimeout = null;
+                let lastScrollPercentage = -1; // 缓存上次滚动比例
+                let cachedDocumentHeight = 0;
+                let cachedViewportHeight = 0;
+                let heightCacheTime = 0;
+                const HEIGHT_CACHE_DURATION = 1000; // 缓存1秒
+                const SCROLL_THRESHOLD = 0.005; // 滚动阈值，小于0.5%的变化不触发同步
                 
-                // 获取文档内容的总高度
+                // 获取文档内容的总高度（带缓存）
                 function getDocumentHeight() {
-                    return Math.max(
+                    const now = Date.now();
+                    if (now - heightCacheTime < HEIGHT_CACHE_DURATION && cachedDocumentHeight > 0) {
+                        return cachedDocumentHeight;
+                    }
+                    
+                    cachedDocumentHeight = Math.max(
                         document.body.scrollHeight,
                         document.body.offsetHeight,
                         document.documentElement.scrollHeight,
                         document.documentElement.offsetHeight
                     );
+                    heightCacheTime = now;
+                    return cachedDocumentHeight;
                 }
                 
-                // 获取视口高度
+                // 获取视口高度（带缓存）
                 function getViewportHeight() {
-                    return Math.max(document.documentElement.clientHeight, window.innerHeight || 0);
+                    const now = Date.now();
+                    if (now - heightCacheTime < HEIGHT_CACHE_DURATION && cachedViewportHeight > 0) {
+                        return cachedViewportHeight;
+                    }
+                    
+                    cachedViewportHeight = Math.max(document.documentElement.clientHeight, window.innerHeight || 0);
+                    return cachedViewportHeight;
                 }
                 
-                // 即时滚动处理
+                // 优化的滚动处理函数
                 function handleScroll() {
                     if (isScrollingFromEditor) {
                         return;
@@ -424,6 +443,13 @@ export class MarkdownPreviewProvider implements vscode.WebviewPanelSerializer {
                     const scrollPercentage = maxScrollTop > 0 ? 
                         Math.max(0, Math.min(1, scrollTop / maxScrollTop)) : 0;
                     
+                    // 只有滚动变化超过阈值时才触发同步
+                    if (Math.abs(scrollPercentage - lastScrollPercentage) < SCROLL_THRESHOLD) {
+                        return;
+                    }
+                    
+                    lastScrollPercentage = scrollPercentage;
+                    
                     vscode.postMessage({
                         command: 'scroll',
                         scrollPercentage: scrollPercentage,
@@ -431,8 +457,27 @@ export class MarkdownPreviewProvider implements vscode.WebviewPanelSerializer {
                     });
                 }
                 
-                // 监听滚动事件
-                document.addEventListener('scroll', handleScroll, { passive: true });
+                // 防抖滚动处理
+                function debouncedHandleScroll() {
+                    if (scrollTimeout) {
+                        return; // 如果已经有待处理的滚动事件，跳过
+                    }
+                    
+                    scrollTimeout = requestAnimationFrame(() => {
+                        handleScroll();
+                        scrollTimeout = null;
+                    });
+                }
+                
+                // 监听滚动事件，使用防抖处理
+                document.addEventListener('scroll', debouncedHandleScroll, { passive: true });
+                
+                // 监听窗口大小变化，清除高度缓存
+                window.addEventListener('resize', () => {
+                    cachedDocumentHeight = 0;
+                    cachedViewportHeight = 0;
+                    heightCacheTime = 0;
+                }, { passive: true });
                 
                 // 监听来自扩展的消息
                 window.addEventListener('message', event => {
@@ -457,10 +502,10 @@ export class MarkdownPreviewProvider implements vscode.WebviewPanelSerializer {
                                 behavior: 'auto'
                             });
                             
-                            // 延迟后重置标志，避免死循环
+                            // 延迟后重置标志，避免死循环，与编辑器端保持一致的延迟时间
                             setTimeout(() => {
                                 isScrollingFromEditor = false;
-                            }, 100);
+                            }, 150);
                             break;
                     }
                 });
@@ -606,13 +651,13 @@ export class MarkdownPreviewProvider implements vscode.WebviewPanelSerializer {
       source: 'editor',
     })
 
-    // 延迟重置滚动源，避免死循环
+    // 延迟重置滚动源，避免死循环，与预览区保持一致的延迟时间
     if (this._scrollTimeout) {
       clearTimeout(this._scrollTimeout)
     }
     this._scrollTimeout = setTimeout(() => {
       this._scrollSource = 'none'
-    }, 100)
+    }, 150)
   }
 
   private handlePreviewScroll(scrollPercentage: number, source?: string, _timestamp?: number) {
@@ -662,8 +707,13 @@ export class MarkdownPreviewProvider implements vscode.WebviewPanelSerializer {
       this._scrollSource = 'preview'
       targetEditor.revealRange(range, vscode.TextEditorRevealType.InCenterIfOutsideViewport)
 
-      // 立即重置滚动源，无延迟
-      this._scrollSource = 'none'
+      // 延迟重置滚动源，与编辑器端保持一致，避免循环滚动
+      if (this._scrollTimeout) {
+        clearTimeout(this._scrollTimeout)
+      }
+      this._scrollTimeout = setTimeout(() => {
+        this._scrollSource = 'none'
+      }, 150)
     }
     catch (error) {
       console.error('Error syncing preview scroll to editor:', error)
