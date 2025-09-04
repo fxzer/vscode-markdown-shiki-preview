@@ -34,6 +34,19 @@ export class MarkdownPreviewProvider implements vscode.WebviewPanelSerializer {
     this.initializeHighlighter()
   }
 
+  private updatePanelTitle(document?: vscode.TextDocument) {
+    if (!this._panel) {
+      return
+    }
+
+    if (document) {
+      const fileName = document.fileName.split('/').pop() || 'Unknown'
+      this._panel.title = `Markdown Preview [${fileName}]`
+    } else {
+      this._panel.title = 'Markdown Preview'
+    }
+  }
+
   private async initializeHighlighter() {
     try {
       this._highlighter = await createHighlighter({
@@ -138,6 +151,7 @@ export class MarkdownPreviewProvider implements vscode.WebviewPanelSerializer {
 
     this.updateContent(document)
     this.setupScrollSync(document)
+    this.updatePanelTitle(document)
   }
 
   async deserializeWebviewPanel(webviewPanel: vscode.WebviewPanel, state: any) {
@@ -200,7 +214,8 @@ export class MarkdownPreviewProvider implements vscode.WebviewPanelSerializer {
         try {
           const uri = vscode.Uri.parse(state.documentUri)
           documentToRestore = await vscode.workspace.openTextDocument(uri)
-        } catch (error) {
+        }
+        catch (error) {
           console.warn('Failed to restore document from state:', error)
         }
       }
@@ -214,6 +229,7 @@ export class MarkdownPreviewProvider implements vscode.WebviewPanelSerializer {
     if (documentToRestore) {
       await this.updateContent(documentToRestore)
       this.setupScrollSync(documentToRestore)
+      this.updatePanelTitle(documentToRestore)
     }
   }
 
@@ -257,6 +273,9 @@ export class MarkdownPreviewProvider implements vscode.WebviewPanelSerializer {
       return
     }
 
+    // 更新标签页标题
+    this.updatePanelTitle(document)
+
     // 更新内容（带防抖）
     this.updateContentDebounced(document)
 
@@ -297,6 +316,9 @@ export class MarkdownPreviewProvider implements vscode.WebviewPanelSerializer {
 
     // 确保 _currentDocument 被设置
     this._currentDocument = document
+
+    // 更新标签页标题
+    this.updatePanelTitle(document)
 
     const content = document.getText()
     const documentUri = document.uri.toString()
