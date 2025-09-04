@@ -4,6 +4,7 @@ import MarkdownIt from 'markdown-it'
 import { bundledLanguages, bundledThemes, createHighlighter } from 'shiki'
 import * as vscode from 'vscode'
 import { currentTheme } from './config'
+import { getCurrentTheme, getFontFamily, getFontSize, getLineHeight, getSyncScroll, logger } from './utils'
 
 export class MarkdownPreviewProvider implements vscode.WebviewPanelSerializer {
   private _panel: vscode.WebviewPanel | undefined
@@ -24,8 +25,11 @@ export class MarkdownPreviewProvider implements vscode.WebviewPanelSerializer {
   private _editorMap = new Map<string, vscode.TextEditor>() // URI到编辑器的映射
 
   constructor(private readonly _extensionUri: vscode.Uri) {
-    // 从配置中读取当前主题，如果没有则使用默认值
-    this._currentShikiTheme = currentTheme.value || 'github-light'
+    // 使用改进的配置获取策略，按VSCode优先级获取主题
+    // 如果都没有配置，默认使用 'vitesse-dark'
+    this._currentShikiTheme = getCurrentTheme()
+
+    logger.info(`MarkdownPreviewProvider 初始化，使用主题: ${this._currentShikiTheme}`)
 
     this._md = new MarkdownIt({
       html: true,
@@ -33,7 +37,7 @@ export class MarkdownPreviewProvider implements vscode.WebviewPanelSerializer {
       typographer: true,
     })
 
-    // 初始化 lodash 防抖函数
+    // 初始化 lodash 防抖函数 [[memory:7983867]]
     this.debouncedUpdateContent = debounce(this.performContentUpdate.bind(this), 300)
 
     this.initializeHighlighter()
@@ -109,10 +113,10 @@ export class MarkdownPreviewProvider implements vscode.WebviewPanelSerializer {
         },
       )
 
-      // 应用当前配置的主题
-      const config = vscode.workspace.getConfiguration('markdownPreview')
-      const configTheme = config.get<string>('currentTheme', 'github-light')
+      // 应用当前配置的主题，使用改进的配置获取策略
+      const configTheme = getCurrentTheme()
       if (configTheme !== this._currentShikiTheme) {
+        logger.info(`showPreview: 更新主题从 ${this._currentShikiTheme} 到 ${configTheme}`)
         this._currentShikiTheme = configTheme
         this.setupMarkdownRenderer()
       }
@@ -188,10 +192,10 @@ export class MarkdownPreviewProvider implements vscode.WebviewPanelSerializer {
       await this.initializeHighlighter()
     }
 
-    // 应用当前配置的主题
-    const config = vscode.workspace.getConfiguration('markdownPreview')
-    const configTheme = config.get<string>('currentTheme', 'github-light')
+    // 应用当前配置的主题，使用改进的配置获取策略
+    const configTheme = getCurrentTheme()
     if (configTheme !== this._currentShikiTheme) {
+      logger.info(`deserializeWebviewPanel: 更新主题从 ${this._currentShikiTheme} 到 ${configTheme}`)
       this._currentShikiTheme = configTheme
       this.setupMarkdownRenderer()
     }
@@ -246,12 +250,12 @@ export class MarkdownPreviewProvider implements vscode.WebviewPanelSerializer {
   async updateTheme(theme: string) {
     console.log('[updateTheme] Received theme:', theme)
     console.log('[updateTheme] Current _currentShikiTheme:', this._currentShikiTheme)
-    
+
     // 强制更新主题，无论是否发生变化
     // 这确保了从设置更改主题时也能立即生效
     this._currentShikiTheme = theme
     this._themeChanged = true // 标记主题已更改，强制重新渲染
-    
+
     console.log('[updateTheme] Updated _currentShikiTheme:', this._currentShikiTheme)
     console.log('[updateTheme] _themeChanged:', this._themeChanged)
 
@@ -362,37 +366,44 @@ export class MarkdownPreviewProvider implements vscode.WebviewPanelSerializer {
     // 使用当前设置的主题（可能是预览主题或配置主题）
     let currentTheme = this._currentShikiTheme
 
-    // 验证主题是否有效，如果无效则从配置获取
+    // 验证主题是否有效，如果无效则使用配置获取策略
     const validThemes = Object.keys(bundledThemes)
-    console.log('[updateContent] Validating theme:', currentTheme)
-    console.log('[updateContent] Is theme valid?', validThemes.includes(currentTheme))
+    logger.info(`[updateContent] 验证主题: ${currentTheme}`)
+    logger.info(`[updateContent] 主题是否有效: ${validThemes.includes(currentTheme)}`)
 
     if (!validThemes.includes(currentTheme)) {
-      console.log('[updateContent] Theme is invalid, attempting to fix...')
-      const config = vscode.workspace.getConfiguration('markdownPreview')
-      currentTheme = config.get<string>('currentTheme', 'github-light')
-      console.log('[updateContent] Fallback theme from config:', currentTheme)
+      logger.warn('[updateContent] 当前主题无效，尝试修复...')
+
+      // 使用改进的配置获取策略，传入文档URI以获取文件夹特定配置
+      currentTheme = getCurrentTheme(document.uri)
+      logger.info(`[updateContent] 从配置获取的备用主题: ${currentTheme}`)
 
       if (!validThemes.includes(currentTheme)) {
-        console.log('[updateContent] Fallback theme is also invalid, using github-light')
-        currentTheme = 'github-light'
+        logger.warn('[updateContent] 备用主题也无效，使用默认主题 vitesse-dark')
+        currentTheme = 'vitesse-dark'
+
         // 同步修复配置 - 但避免循环触发
-        console.log('[updateContent] Updating config to github-light')
-        // 添加标记，避免配置更新触发循环
-        const isUpdatingConfig = true
-        await config.update('currentTheme', currentTheme, vscode.ConfigurationTarget.Global)
+        logger.info('[updateContent] 更新配置为 vitesse-dark')
+        try {
+          const config = vscode.workspace.getConfiguration('markdownPreview')
+          await config.update('currentTheme', currentTheme, vscode.ConfigurationTarget.Global)
+        }
+        catch (error) {
+          logger.error('[updateContent] 更新配置失败:', error)
+        }
       }
 
       this._currentShikiTheme = currentTheme
       this.setupMarkdownRenderer()
-      console.log('[updateContent] Theme fixed to:', currentTheme)
+      logger.info(`[updateContent] 主题已修复为: ${currentTheme}`)
     }
 
     const html = this._md.render(content)
-    const config = vscode.workspace.getConfiguration('markdownPreview')
-    const fontSize = config.get<number>('fontSize', 14)
-    const lineHeight = config.get<number>('lineHeight', 1.6)
-    const fontFamily = config.get<string>('fontFamily', 'system-ui, -apple-system, BlinkMacSystemFont, sans-serif')
+
+    // 使用改进的配置获取策略获取所有配置，传入文档URI以支持文件夹特定配置
+    const fontSize = getFontSize(document.uri)
+    const lineHeight = getLineHeight(document.uri)
+    const fontFamily = getFontFamily(document.uri)
 
     console.log('[updateContent] Generating HTML with theme:', currentTheme)
     this._panel.webview.html = this.getHtmlForWebview(html, currentTheme, fontSize, lineHeight, fontFamily)
@@ -739,11 +750,12 @@ export class MarkdownPreviewProvider implements vscode.WebviewPanelSerializer {
 
     this._currentDocument = document
 
-    // 检查是否启用滚动同步
-    const config = vscode.workspace.getConfiguration('markdownPreview')
-    const syncScrollEnabled = config.get<boolean>('syncScroll', true)
-    if (!syncScrollEnabled)
+    // 检查是否启用滚动同步，使用改进的配置获取策略
+    const syncScrollEnabled = getSyncScroll(document.uri)
+    if (!syncScrollEnabled) {
+      logger.info('滚动同步已禁用')
       return
+    }
 
     // 防抖处理编辑器滚动事件
     const scrollDisposable = vscode.window.onDidChangeTextEditorVisibleRanges((event) => {
@@ -771,8 +783,8 @@ export class MarkdownPreviewProvider implements vscode.WebviewPanelSerializer {
       return
     }
 
-    const config = vscode.workspace.getConfiguration('markdownPreview')
-    const syncScrollEnabled = config.get<boolean>('syncScroll', true)
+    // 使用改进的配置获取策略
+    const syncScrollEnabled = getSyncScroll(this._currentDocument.uri)
     if (!syncScrollEnabled)
       return
 
@@ -810,8 +822,8 @@ export class MarkdownPreviewProvider implements vscode.WebviewPanelSerializer {
       return
     }
 
-    const config = vscode.workspace.getConfiguration('markdownPreview')
-    const syncScrollEnabled = config.get<boolean>('syncScroll', true)
+    // 使用改进的配置获取策略
+    const syncScrollEnabled = getSyncScroll(this._currentDocument.uri)
     if (!syncScrollEnabled)
       return
 

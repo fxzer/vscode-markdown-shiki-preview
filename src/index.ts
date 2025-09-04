@@ -5,6 +5,7 @@ import * as vscode from 'vscode'
 import { currentTheme } from './config'
 import { displayName } from './generated/meta'
 import { MarkdownPreviewProvider } from './preview-provider'
+import { getCurrentTheme } from './utils'
 
 // 使用新模板的日志系统
 const logger = useLogger(displayName)
@@ -167,7 +168,8 @@ const { activate, deactivate } = defineExtension((ctx) => {
 
         // 添加延迟确保配置已完全更新
         configChangeTimeout = setTimeout(async () => {
-          const newTheme = workspace.getConfiguration('markdownPreview').get<string>('currentTheme') || 'github-light'
+          // 使用改进的配置获取策略
+          const newTheme = getCurrentTheme()
           const reactiveTheme = currentTheme.value
 
           // 避免重复处理相同的主题
@@ -179,6 +181,8 @@ const { activate, deactivate } = defineExtension((ctx) => {
 
           // 使用 reactive-vscode 的值，因为它可能更准确
           const themeToUse = reactiveTheme || newTheme
+
+          logger.info(`[Config Change] 配置变化，更新主题为: ${themeToUse}`)
 
           // 无论预览窗口是否存在都更新主题，确保配置同步
           await provider.updateTheme(themeToUse).catch((error) => {

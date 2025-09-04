@@ -1,5 +1,4 @@
 {
-  // Auto generate metadata
   "emeraldwalk.runonsave": {
     "commands": [
       {
@@ -9,18 +8,12 @@
       }
     ]
   },
-
-  // Disable the default formatter, use eslint instead
   "prettier.enable": false,
   "editor.formatOnSave": false,
-
-  // Auto fix
   "editor.codeActionsOnSave": {
     "source.fixAll.eslint": "explicit",
     "source.organizeImports": "never"
   },
-
-  // Silent the stylistic rules in you IDE, but still auto fix them
   "eslint.rules.customizations": [
     { "rule": "style/*", "severity": "off" },
     { "rule": "*-indent", "severity": "off" },
@@ -32,8 +25,6 @@
     { "rule": "*quotes", "severity": "off" },
     { "rule": "*semi", "severity": "off" }
   ],
-
-  // Enable eslint for all supported languages
   "eslint.validate": [
     "javascript",
     "javascriptreact",
@@ -46,5 +37,10 @@
     "jsonc",
     "yaml"
   ],
-  "editor.fontFamily": "'Fira Code', 'JetBrainsMono','Source Code Pro', 'Input Mono'"
+  "editor.fontFamily": "'Fira Code', 'JetBrainsMono','Source Code Pro', 'Input Mono'",
+  "markdownPreview.currentTheme": "github-dark",
+  "markdownPreview.fontSize": 16,
+  "markdownPreview.lineHeight": 1.8,
+  "markdownPreview.fontFamily": "'Fira Code', monospace",
+  "markdownPreview.syncScroll": true
 }

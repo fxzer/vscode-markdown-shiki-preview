@@ -84,7 +84,7 @@
       "properties": {
         "markdownPreview.currentTheme": {
           "type": "string",
-          "default": "github-light",
+          "default": "vitesse-dark",
           "description": "Current theme for the markdown preview.",
           "enum": [
             "andromeeda",
