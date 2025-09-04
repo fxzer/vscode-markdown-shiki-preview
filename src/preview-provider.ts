@@ -102,6 +102,8 @@ export class MarkdownPreviewProvider implements vscode.WebviewPanelSerializer {
         this._panel = undefined
       })
 
+      // webview选项已经在创建时设置，这里不需要重复设置
+
       this._panel.webview.onDidReceiveMessage(
         (message) => {
           switch (message.command) {
@@ -116,13 +118,29 @@ export class MarkdownPreviewProvider implements vscode.WebviewPanelSerializer {
         undefined,
         [],
       )
+
+      // 保存状态用于序列化恢复
+      const saveState = () => {
+        if (this._panel) {
+          this._panel.webview.postMessage({
+            command: 'saveState',
+            state: this.getState(),
+          })
+        }
+      }
+
+      // 定期保存状态
+      const stateInterval = setInterval(saveState, 5000) // 每5秒保存一次状态
+      this._panel.onDidDispose(() => {
+        clearInterval(stateInterval)
+      })
     }
 
     this.updateContent(document)
     this.setupScrollSync(document)
   }
 
-  async deserializeWebviewPanel(webviewPanel: vscode.WebviewPanel, _state: any) {
+  async deserializeWebviewPanel(webviewPanel: vscode.WebviewPanel, state: any) {
     this._panel = webviewPanel
 
     webviewPanel.onDidDispose(() => {
@@ -145,10 +163,57 @@ export class MarkdownPreviewProvider implements vscode.WebviewPanelSerializer {
       [],
     )
 
+    // 确保高亮器已初始化
+    if (!this._highlighter) {
+      await this.initializeHighlighter()
+    }
+
+    // 应用当前配置的主题
+    const config = vscode.workspace.getConfiguration('markdownPreview')
+    const configTheme = config.get<string>('currentTheme', 'github-light')
+    if (configTheme !== this._currentShikiTheme) {
+      this._currentShikiTheme = configTheme
+      this.setupMarkdownRenderer()
+    }
+
+    // 尝试从多个来源恢复文档
+    let documentToRestore: vscode.TextDocument | undefined
+
+    // 1. 首先检查活动编辑器
     const activeEditor = vscode.window.activeTextEditor
     if (activeEditor && activeEditor.document.fileName.endsWith('.md')) {
-      this.updateContent(activeEditor.document)
-      this.setupScrollSync(activeEditor.document)
+      documentToRestore = activeEditor.document
+    }
+    // 2. 如果没有活动的Markdown编辑器，检查所有可见编辑器
+    else {
+      for (const editor of vscode.window.visibleTextEditors) {
+        if (editor.document.fileName.endsWith('.md')) {
+          documentToRestore = editor.document
+          break
+        }
+      }
+    }
+    // 3. 最后尝试从状态或之前的文档恢复
+    if (!documentToRestore) {
+      // 从状态恢复文档URI（如果有的话）
+      if (state && state.documentUri) {
+        try {
+          const uri = vscode.Uri.parse(state.documentUri)
+          documentToRestore = await vscode.workspace.openTextDocument(uri)
+        } catch (error) {
+          console.warn('Failed to restore document from state:', error)
+        }
+      }
+      // 或者使用之前的文档
+      else if (this._currentDocument) {
+        documentToRestore = this._currentDocument
+      }
+    }
+
+    // 如果找到了文档，更新内容和设置滚动同步
+    if (documentToRestore) {
+      await this.updateContent(documentToRestore)
+      this.setupScrollSync(documentToRestore)
     }
   }
 
@@ -175,6 +240,14 @@ export class MarkdownPreviewProvider implements vscode.WebviewPanelSerializer {
 
   getCurrentDocument(): vscode.TextDocument | undefined {
     return this._currentDocument
+  }
+
+  // 获取当前状态用于序列化
+  getState(): any {
+    return {
+      documentUri: this._currentDocument?.uri.toString(),
+      theme: this._currentShikiTheme,
+    }
   }
 
   // 优雅地切换到新文档，确保内容更新和滚动同步都正确设置
