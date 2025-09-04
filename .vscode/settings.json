@@ -39,7 +39,7 @@
   ],
   "editor.fontFamily": "'Fira Code', 'JetBrainsMono','Source Code Pro', 'Input Mono'",
   "markdownPreview.currentTheme": "github-dark",
-  "markdownPreview.fontSize": 16,
+  "markdownPreview.fontSize": 12,
   "markdownPreview.lineHeight": 1.8,
   "markdownPreview.fontFamily": "'Fira Code', monospace",
   "markdownPreview.syncScroll": true
