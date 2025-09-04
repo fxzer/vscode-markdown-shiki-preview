@@ -185,12 +185,12 @@
         "markdownPreview.syncScroll": {
           "type": "boolean",
           "default": true,
-          "description": "Enable synchronous scrolling between editor and preview"
+          "description": "Enable synchronous scrolling between editor and preview. Enable 'editor.smoothScrolling' for smoother scrolling experience"
         },
         "markdownPreview.fontFamily": {
           "type": "string",
           "default": "system-ui",
-          "description": "Font family for preview content. For other fonts, modify settings.json directly.",
+          "description": "Font family for preview content. Selected font must be installed on your system. For other fonts, modify settings.json directly.",
           "enum": [
             "system-ui",
             "Helvetica",
