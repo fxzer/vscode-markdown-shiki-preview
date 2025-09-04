@@ -738,7 +738,6 @@ export class MarkdownPreviewProvider implements vscode.WebviewPanelSerializer {
                     background-color: var(--editor-foldBackground);
                     color: var(--editor-foreground);
                 }
-                
                 a {
                     color: var(--textLink-foreground);
                 }
