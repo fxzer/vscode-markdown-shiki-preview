@@ -5,7 +5,6 @@ import * as vscode from 'vscode'
 import { currentTheme } from './config'
 import { displayName } from './generated/meta'
 import { MarkdownPreviewProvider } from './preview-provider'
-import { ThemeExplorerProvider } from './theme-explorer'
 
 // 使用新模板的日志系统
 const logger = useLogger(displayName)
@@ -128,20 +127,11 @@ const { activate, deactivate } = defineExtension((ctx) => {
 
   // 创建提供者实例
   const provider = new MarkdownPreviewProvider(ctx.extensionUri)
-  const themeExplorer = new ThemeExplorerProvider(provider)
 
   // 注册 WebView 序列化器
   ctx.subscriptions.push(
     window.registerWebviewPanelSerializer('markdownPreview', provider),
   )
-
-  // 注册主题资源管理器
-  const treeView = window.createTreeView('markdownPreview.themeExplorer', {
-    treeDataProvider: themeExplorer,
-  })
-
-  ctx.subscriptions.push(treeView)
-  ctx.subscriptions.push({ dispose: () => themeExplorer.dispose() })
 
   // 注册命令
   useCommand('markdownPreview.showPreview', () => {
@@ -162,20 +152,39 @@ const { activate, deactivate } = defineExtension((ctx) => {
     }
   })
 
+  // 添加防抖机制，避免配置变化监听器重复触发
+  let configChangeTimeout: NodeJS.Timeout | undefined
+  let lastProcessedTheme = ''
 
   // 监听配置变化，自动更新主题和字体设置
   ctx.subscriptions.push(
-    workspace.onDidChangeConfiguration((e) => {
+    workspace.onDidChangeConfiguration(async (e) => {
       if (e.affectsConfiguration('markdownPreview.currentTheme')) {
-        // 检查是否是 themeExplorer 内部更新，避免循环触发
-        if (!themeExplorer.isCurrentlyUpdating()) {
-          const newTheme = currentTheme.value || 'github-light'
-          // 只有在预览窗口存在时才更新主题
-          if (provider.hasActivePanel()) {
-            provider.updateTheme(newTheme)
-          }
-          themeExplorer.refresh()
+        // 清除之前的超时，实现防抖
+        if (configChangeTimeout) {
+          clearTimeout(configChangeTimeout)
         }
+
+        // 添加延迟确保配置已完全更新
+        configChangeTimeout = setTimeout(async () => {
+          const newTheme = workspace.getConfiguration('markdownPreview').get<string>('currentTheme') || 'github-light'
+          const reactiveTheme = currentTheme.value
+
+          // 避免重复处理相同的主题
+          if (newTheme === lastProcessedTheme) {
+            return
+          }
+
+          lastProcessedTheme = newTheme
+
+          // 使用 reactive-vscode 的值，因为它可能更准确
+          const themeToUse = reactiveTheme || newTheme
+
+          // 无论预览窗口是否存在都更新主题，确保配置同步
+          await provider.updateTheme(themeToUse).catch((error) => {
+            logger.error(`[Config Change] Failed to update theme:`, error)
+          })
+        }, 200) // 增加延迟到200ms，确保配置更新完成
       }
 
       // 监听字体大小、行高等配置变化
@@ -191,6 +200,7 @@ const { activate, deactivate } = defineExtension((ctx) => {
         }
       }
     }),
+
   )
 
   // 监听活动编辑器变化，自动更新预览内容和滚动同步（带防抖）
@@ -231,7 +241,6 @@ const { activate, deactivate } = defineExtension((ctx) => {
   // 确保在扩展停用时清理资源
   return () => {
     provider.dispose()
-    themeExplorer.dispose()
     logger.info('VSCode Markdown Shiki Preview extension deactivated')
   }
 })

@@ -3,12 +3,14 @@ import { debounce } from 'lodash-es'
 import MarkdownIt from 'markdown-it'
 import { bundledLanguages, bundledThemes, createHighlighter } from 'shiki'
 import * as vscode from 'vscode'
+import { currentTheme } from './config'
 
 export class MarkdownPreviewProvider implements vscode.WebviewPanelSerializer {
   private _panel: vscode.WebviewPanel | undefined
   private _md: MarkdownIt
   private _highlighter: Highlighter | undefined
-  private _currentShikiTheme: string = 'github-light'
+  private _currentShikiTheme: string
+  private _themeChanged: boolean = false // 标记主题是否已更改，强制重新渲染
 
   // 内容更新防抖相关
   private lastUpdateDocumentUri: string | undefined // 记录最后更新的文档URI
@@ -22,6 +24,9 @@ export class MarkdownPreviewProvider implements vscode.WebviewPanelSerializer {
   private _editorMap = new Map<string, vscode.TextEditor>() // URI到编辑器的映射
 
   constructor(private readonly _extensionUri: vscode.Uri) {
+    // 从配置中读取当前主题，如果没有则使用默认值
+    this._currentShikiTheme = currentTheme.value || 'github-light'
+
     this._md = new MarkdownIt({
       html: true,
       linkify: true,
@@ -55,7 +60,7 @@ export class MarkdownPreviewProvider implements vscode.WebviewPanelSerializer {
         langs: Object.keys(bundledLanguages),
       })
 
-      this._currentShikiTheme = 'github-light'
+      // 不再硬编码主题，使用构造函数中从配置读取的主题
       this.setupMarkdownRenderer()
     }
     catch (error) {
@@ -239,7 +244,16 @@ export class MarkdownPreviewProvider implements vscode.WebviewPanelSerializer {
   }
 
   async updateTheme(theme: string) {
+    console.log('[updateTheme] Received theme:', theme)
+    console.log('[updateTheme] Current _currentShikiTheme:', this._currentShikiTheme)
+    
+    // 强制更新主题，无论是否发生变化
+    // 这确保了从设置更改主题时也能立即生效
     this._currentShikiTheme = theme
+    this._themeChanged = true // 标记主题已更改，强制重新渲染
+    
+    console.log('[updateTheme] Updated _currentShikiTheme:', this._currentShikiTheme)
+    console.log('[updateTheme] _themeChanged:', this._themeChanged)
 
     if (this._highlighter) {
       this.setupMarkdownRenderer()
@@ -247,8 +261,16 @@ export class MarkdownPreviewProvider implements vscode.WebviewPanelSerializer {
 
     // 如果预览窗口存在，立即更新预览内容
     if (this._panel && this._currentDocument) {
+      console.log('[updateTheme] Updating preview content...')
+      // 清除HTML缓存，强制重新渲染
+      this._panel.webview.html = ''
+      // 重置文档URI缓存，确保内容被重新渲染
+      this.lastUpdateDocumentUri = undefined
       await this.updateContent(this._currentDocument)
+      console.log('[updateTheme] Preview content updated')
     }
+    // 如果预览窗口不存在，确保下次打开时使用新主题
+    // 主题已经保存在 _currentShikiTheme 中，下次 showPreview 时会自动应用
   }
 
   hasActivePanel(): boolean {
@@ -324,9 +346,16 @@ export class MarkdownPreviewProvider implements vscode.WebviewPanelSerializer {
     const content = document.getText()
     const documentUri = document.uri.toString()
 
+    console.log('[updateContent] _themeChanged:', this._themeChanged)
+    console.log('[updateContent] _currentShikiTheme:', this._currentShikiTheme)
+    console.log('[updateContent] lastUpdateDocumentUri:', this.lastUpdateDocumentUri)
+    console.log('[updateContent] documentUri:', documentUri)
+
     // 避免重复更新同一文档的相同内容
-    if (this.lastUpdateDocumentUri === documentUri && this._panel.webview.html.includes(content.substring(0, 100))) {
-      // 如果是同一个文档且内容没有显著变化，跳过更新
+    // 但是如果主题已更改，则强制重新渲染
+    if (!this._themeChanged && this.lastUpdateDocumentUri === documentUri && this._panel.webview.html.includes(content.substring(0, 100))) {
+      console.log('[updateContent] Skipping update - no theme change and same content')
+      // 如果是同一个文档且内容没有显著变化，并且主题没有更改，跳过更新
       return
     }
 
@@ -335,19 +364,28 @@ export class MarkdownPreviewProvider implements vscode.WebviewPanelSerializer {
 
     // 验证主题是否有效，如果无效则从配置获取
     const validThemes = Object.keys(bundledThemes)
+    console.log('[updateContent] Validating theme:', currentTheme)
+    console.log('[updateContent] Is theme valid?', validThemes.includes(currentTheme))
 
     if (!validThemes.includes(currentTheme)) {
+      console.log('[updateContent] Theme is invalid, attempting to fix...')
       const config = vscode.workspace.getConfiguration('markdownPreview')
       currentTheme = config.get<string>('currentTheme', 'github-light')
+      console.log('[updateContent] Fallback theme from config:', currentTheme)
 
       if (!validThemes.includes(currentTheme)) {
+        console.log('[updateContent] Fallback theme is also invalid, using github-light')
         currentTheme = 'github-light'
-        // 同步修复配置
+        // 同步修复配置 - 但避免循环触发
+        console.log('[updateContent] Updating config to github-light')
+        // 添加标记，避免配置更新触发循环
+        const isUpdatingConfig = true
         await config.update('currentTheme', currentTheme, vscode.ConfigurationTarget.Global)
       }
 
       this._currentShikiTheme = currentTheme
       this.setupMarkdownRenderer()
+      console.log('[updateContent] Theme fixed to:', currentTheme)
     }
 
     const html = this._md.render(content)
@@ -356,7 +394,12 @@ export class MarkdownPreviewProvider implements vscode.WebviewPanelSerializer {
     const lineHeight = config.get<number>('lineHeight', 1.6)
     const fontFamily = config.get<string>('fontFamily', 'system-ui, -apple-system, BlinkMacSystemFont, sans-serif')
 
+    console.log('[updateContent] Generating HTML with theme:', currentTheme)
     this._panel.webview.html = this.getHtmlForWebview(html, currentTheme, fontSize, lineHeight, fontFamily)
+
+    // 重置主题更改标志，表示已经完成渲染
+    this._themeChanged = false
+    console.log('[updateContent] HTML updated and _themeChanged reset to false')
   }
 
   private getHtmlForWebview(content: string, theme: string, fontSize: number, lineHeight: number, fontFamily: string): string {

@@ -60,15 +60,6 @@
         "category": "VSCode Markdown Shiki Preview"
       }
     ],
-    "views": {
-      "explorer": [
-        {
-          "id": "markdownPreview.themeExplorer",
-          "name": "Theme Preview",
-          "when": "resourceExtname == .md"
-        }
-      ]
-    },
     "menus": {
       "editor/title": [
         {
@@ -94,7 +85,7 @@
         "markdownPreview.currentTheme": {
           "type": "string",
           "default": "github-light",
-          "description": "Select from all available Shiki themes (自动生成于 2025/9/3)",
+          "description": "Current theme for the markdown preview.",
           "enum": [
             "andromeeda",
             "aurora-x",
@@ -210,8 +201,6 @@
     "dev": "nr build --watch --sourcemap",
     "prepare": "nr update",
     "update": "vscode-ext-gen --output src/generated/meta.ts",
-    "update-themes": "node scripts/theme-manager.js sync && npm run build",
-    "analyze-themes": "node scripts/theme-manager.js analyze",
     "lint": "eslint .",
     "lintfix": "eslint . --fix",
     "test": "vitest",
