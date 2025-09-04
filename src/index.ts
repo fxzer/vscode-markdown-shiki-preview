@@ -267,13 +267,13 @@ class Person implements User {
     }),
   )
 
-  // 监听活动编辑器变化，自动更新预览内容（带防抖）
+  // 监听活动编辑器变化，自动更新预览内容和滚动同步（带防抖）
   ctx.subscriptions.push(
     window.onDidChangeActiveTextEditor((editor) => {
       if (editor && editor.document.fileName.endsWith('.md')) {
-        // 如果有活动的预览窗口，使用防抖更新其内容
+        // 如果有活动的预览窗口，切换到新文档（包含内容更新和滚动同步重设）
         if (provider.hasActivePanel()) {
-          provider.updateContentDebounced(editor.document)
+          provider.switchToDocument(editor.document)
         }
       }
     }),

@@ -177,6 +177,20 @@ export class MarkdownPreviewProvider implements vscode.WebviewPanelSerializer {
     return this._currentDocument
   }
 
+  // 优雅地切换到新文档，确保内容更新和滚动同步都正确设置
+  public switchToDocument(document: vscode.TextDocument) {
+    // 检查是否是同一个文档，避免不必要的重复设置
+    if (this._currentDocument && this._currentDocument.uri.toString() === document.uri.toString()) {
+      return
+    }
+
+    // 更新内容（带防抖）
+    this.updateContentDebounced(document)
+
+    // 重新设置滚动同步，确保新文档的编辑器滚动能正确同步
+    this.setupScrollSync(document)
+  }
+
   // 带防抖的内容更新方法
   updateContentDebounced(document: vscode.TextDocument) {
     this.debouncedUpdateContent(document)
@@ -529,7 +543,7 @@ export class MarkdownPreviewProvider implements vscode.WebviewPanelSerializer {
     return text
   }
 
-  private setupScrollSync(document: vscode.TextDocument) {
+  public setupScrollSync(document: vscode.TextDocument) {
     // 清理之前的滚动同步监听器
     this.disposeScrollSync()
 
@@ -538,7 +552,8 @@ export class MarkdownPreviewProvider implements vscode.WebviewPanelSerializer {
     // 检查是否启用滚动同步
     const config = vscode.workspace.getConfiguration('markdownPreview')
     const syncScrollEnabled = config.get<boolean>('syncScroll', true)
-    if (!syncScrollEnabled) return
+    if (!syncScrollEnabled)
+      return
 
     // 防抖处理编辑器滚动事件
     const scrollDisposable = vscode.window.onDidChangeTextEditorVisibleRanges((event) => {
@@ -568,13 +583,16 @@ export class MarkdownPreviewProvider implements vscode.WebviewPanelSerializer {
 
     const config = vscode.workspace.getConfiguration('markdownPreview')
     const syncScrollEnabled = config.get<boolean>('syncScroll', true)
-    if (!syncScrollEnabled) return
+    if (!syncScrollEnabled)
+      return
 
     const visibleRange = editor.visibleRanges[0]
-    if (!visibleRange) return
+    if (!visibleRange)
+      return
 
     const totalLines = editor.document.lineCount
-    if (totalLines === 0) return
+    if (totalLines === 0)
+      return
 
     // 使用可见区域中间位置计算滚动比例
     const middleLine = Math.floor((visibleRange.start.line + visibleRange.end.line) / 2)
@@ -585,7 +603,7 @@ export class MarkdownPreviewProvider implements vscode.WebviewPanelSerializer {
     this._panel.webview.postMessage({
       command: 'scrollToPercentage',
       percentage: scrollRatio,
-      source: 'editor'
+      source: 'editor',
     })
 
     // 延迟重置滚动源，避免死循环
@@ -597,14 +615,15 @@ export class MarkdownPreviewProvider implements vscode.WebviewPanelSerializer {
     }, 100)
   }
 
-  private handlePreviewScroll(scrollPercentage: number, source?: string, timestamp?: number) {
+  private handlePreviewScroll(scrollPercentage: number, source?: string, _timestamp?: number) {
     if (!this._currentDocument || source === 'editor' || this._scrollSource === 'editor') {
       return
     }
 
     const config = vscode.workspace.getConfiguration('markdownPreview')
     const syncScrollEnabled = config.get<boolean>('syncScroll', true)
-    if (!syncScrollEnabled) return
+    if (!syncScrollEnabled)
+      return
 
     // 使用文档URI查找对应的编辑器
     const documentUri = this._currentDocument.uri.toString()
@@ -614,7 +633,8 @@ export class MarkdownPreviewProvider implements vscode.WebviewPanelSerializer {
     const activeEditor = vscode.window.activeTextEditor
     if (activeEditor && activeEditor.document.uri.toString() === documentUri) {
       targetEditor = activeEditor
-    } else {
+    }
+    else {
       // 查找所有可见的编辑器
       for (const editor of vscode.window.visibleTextEditors) {
         if (editor.document.uri.toString() === documentUri) {
@@ -624,25 +644,28 @@ export class MarkdownPreviewProvider implements vscode.WebviewPanelSerializer {
       }
     }
 
-    if (!targetEditor) return
+    if (!targetEditor)
+      return
 
     try {
       const totalLines = this._currentDocument.lineCount
-      if (totalLines === 0) return
+      if (totalLines === 0)
+        return
 
       const targetLine = Math.min(
         Math.floor(scrollPercentage * Math.max(0, totalLines - 1)),
-        totalLines - 1
+        totalLines - 1,
       )
       const range = new vscode.Range(targetLine, 0, targetLine, 0)
-      
+
       // 设置滚动源并即时滚动编辑器
       this._scrollSource = 'preview'
       targetEditor.revealRange(range, vscode.TextEditorRevealType.InCenterIfOutsideViewport)
-      
+
       // 立即重置滚动源，无延迟
       this._scrollSource = 'none'
-    } catch (error) {
+    }
+    catch (error) {
       console.error('Error syncing preview scroll to editor:', error)
     }
   }
@@ -651,7 +674,7 @@ export class MarkdownPreviewProvider implements vscode.WebviewPanelSerializer {
     // 清理滚动同步相关的监听器
     this._scrollSyncDisposables.forEach(disposable => disposable.dispose())
     this._scrollSyncDisposables = []
-    
+
     // 清理滚动超时
     if (this._scrollTimeout) {
       clearTimeout(this._scrollTimeout)
