@@ -3,7 +3,6 @@ import { debounce } from 'lodash-es'
 import MarkdownIt from 'markdown-it'
 import { bundledLanguages, bundledThemes, createHighlighter } from 'shiki'
 import * as vscode from 'vscode'
-import { currentTheme } from './config'
 import { getCurrentTheme, getFontFamily, getFontSize, getLineHeight, getSyncScroll, logger } from './utils'
 
 export class MarkdownPreviewProvider implements vscode.WebviewPanelSerializer {
@@ -248,16 +247,16 @@ export class MarkdownPreviewProvider implements vscode.WebviewPanelSerializer {
   }
 
   async updateTheme(theme: string) {
-    console.log('[updateTheme] Received theme:', theme)
-    console.log('[updateTheme] Current _currentShikiTheme:', this._currentShikiTheme)
+    logger.info('[updateTheme] Received theme:', theme)
+    logger.info('[updateTheme] Current _currentShikiTheme:', this._currentShikiTheme)
 
     // 强制更新主题，无论是否发生变化
     // 这确保了从设置更改主题时也能立即生效
     this._currentShikiTheme = theme
     this._themeChanged = true // 标记主题已更改，强制重新渲染
 
-    console.log('[updateTheme] Updated _currentShikiTheme:', this._currentShikiTheme)
-    console.log('[updateTheme] _themeChanged:', this._themeChanged)
+    logger.info('[updateTheme] Updated _currentShikiTheme:', this._currentShikiTheme)
+    logger.info('[updateTheme] _themeChanged:', this._themeChanged)
 
     if (this._highlighter) {
       this.setupMarkdownRenderer()
@@ -265,13 +264,13 @@ export class MarkdownPreviewProvider implements vscode.WebviewPanelSerializer {
 
     // 如果预览窗口存在，立即更新预览内容
     if (this._panel && this._currentDocument) {
-      console.log('[updateTheme] Updating preview content...')
+      logger.info('[updateTheme] Updating preview content...')
       // 清除HTML缓存，强制重新渲染
       this._panel.webview.html = ''
       // 重置文档URI缓存，确保内容被重新渲染
       this.lastUpdateDocumentUri = undefined
       await this.updateContent(this._currentDocument)
-      console.log('[updateTheme] Preview content updated')
+      logger.info('[updateTheme] Preview content updated')
     }
     // 如果预览窗口不存在，确保下次打开时使用新主题
     // 主题已经保存在 _currentShikiTheme 中，下次 showPreview 时会自动应用
@@ -350,15 +349,15 @@ export class MarkdownPreviewProvider implements vscode.WebviewPanelSerializer {
     const content = document.getText()
     const documentUri = document.uri.toString()
 
-    console.log('[updateContent] _themeChanged:', this._themeChanged)
-    console.log('[updateContent] _currentShikiTheme:', this._currentShikiTheme)
-    console.log('[updateContent] lastUpdateDocumentUri:', this.lastUpdateDocumentUri)
-    console.log('[updateContent] documentUri:', documentUri)
+    logger.info('[updateContent] _themeChanged:', this._themeChanged)
+    logger.info('[updateContent] _currentShikiTheme:', this._currentShikiTheme)
+    logger.info('[updateContent] lastUpdateDocumentUri:', this.lastUpdateDocumentUri)
+    logger.info('[updateContent] documentUri:', documentUri)
 
     // 避免重复更新同一文档的相同内容
     // 但是如果主题已更改，则强制重新渲染
     if (!this._themeChanged && this.lastUpdateDocumentUri === documentUri && this._panel.webview.html.includes(content.substring(0, 100))) {
-      console.log('[updateContent] Skipping update - no theme change and same content')
+      logger.info('[updateContent] Skipping update - no theme change and same content')
       // 如果是同一个文档且内容没有显著变化，并且主题没有更改，跳过更新
       return
     }
@@ -405,12 +404,12 @@ export class MarkdownPreviewProvider implements vscode.WebviewPanelSerializer {
     const lineHeight = getLineHeight(document.uri)
     const fontFamily = getFontFamily(document.uri)
 
-    console.log('[updateContent] Generating HTML with theme:', currentTheme)
+    logger.info('[updateContent] Generating HTML with theme:', currentTheme)
     this._panel.webview.html = this.getHtmlForWebview(html, currentTheme, fontSize, lineHeight, fontFamily)
 
     // 重置主题更改标志，表示已经完成渲染
     this._themeChanged = false
-    console.log('[updateContent] HTML updated and _themeChanged reset to false')
+    logger.info('[updateContent] HTML updated and _themeChanged reset to false')
   }
 
   private getHtmlForWebview(content: string, theme: string, fontSize: number, lineHeight: number, fontFamily: string): string {
@@ -444,6 +443,8 @@ export class MarkdownPreviewProvider implements vscode.WebviewPanelSerializer {
                 
                 /* Shiki styles */
                 .shiki {
+                    background-color: var(--textCodeBlock-background) !important;
+                    border: 1px solid var(--panel-border);
                     border-radius: 6px;
                     padding: 16px;
                     overflow-x: auto;
@@ -458,8 +459,8 @@ export class MarkdownPreviewProvider implements vscode.WebviewPanelSerializer {
                     line-height: 1.25;
                 }
                 
-                h1 { font-size: 2em; border-bottom: 1px solid var(--color-border-muted); padding-bottom: 0.3em; }
-                h2 { font-size: 1.5em; border-bottom: 1px solid var(--color-border-muted); padding-bottom: 0.3em; }
+                h1 { font-size: 2em; border-bottom: 1px solid var(--editorLineNumber-foreground); padding-bottom: 0.3em; }
+                h2 { font-size: 1.5em; border-bottom: 1px solid var(--editorLineNumber-foreground); padding-bottom: 0.3em; }
                 h3 { font-size: 1.25em; }
                 h4 { font-size: 1em; }
                 h5 { font-size: 0.875em; }
@@ -677,55 +678,69 @@ export class MarkdownPreviewProvider implements vscode.WebviewPanelSerializer {
     try {
       // 获取主题的CSS变量
       const themeData = this._highlighter.getTheme(theme)
+      logger.info('[ themeData ]-680', themeData)
       if (!themeData || !themeData.colors)
         return ''
 
-      const colors = themeData.colors || {}
+      // 默认颜色配置
+      const defaultColors = {
+        'editor.background': '#ffffff',
+        'editor.lineHighlightBackground': '#f6f8fa',
+        'editor.foreground': '#24292e',
+        'editorLineNumber.foreground': '#6a737d',
+        'panel.border': '#d0d7de',
+        'editor.selectionBackground': 'rgba(175,184,193,0.2)',
+        'textLink.foreground': '#0969da',
+        'textCodeBlock.background': '#f6f8fa',
+        'editor.foldBackground': 'rgba(175,184,193,0.15)',
+        'textBlockQuote.background': 'rgba(175,184,193,0.1)',
+      }
+
+      // 使用扩展运算符合并颜色，主题颜色优先
+      const colors = { ...defaultColors, ...themeData.colors }
+
+      // 使用扩展运算符生成CSS变量
+      const cssVariables = Object.entries(colors)
+        .map(([key, value]) => `--${key.replace('.', '-')}: ${value};`)
+        .join('\n                    ')
 
       return `
                 :root {
-                    --color-canvas-default: ${colors['editor.background'] || '#ffffff'};
-                    --color-canvas-subtle: ${colors['editor.background'] || '#f6f8fa'};
-                    --color-fg-default: ${colors['editor.foreground'] || '#24292e'};
-                    --color-fg-muted: ${colors['editorLineNumber.foreground'] || '#6a737d'};
-                    --color-border-default: ${colors['editorLineNumber.foreground'] || '#d0d7de'};
-                    --color-border-muted: ${colors['editorLineNumber.foreground'] || '#d8dee4'};
-                    --color-neutral-muted: ${colors['editor.selectionBackground'] || 'rgba(175,184,193,0.2)'};
-                    --color-accent-fg: ${colors['textLink.foreground'] || '#0969da'};
-                    background-color: var(--color-canvas-default);
-                    color: var(--color-fg-default);
+                    ${cssVariables}
                 }
                 
                 body {
-                    background-color: var(--color-canvas-default);
-                    color: var(--color-fg-default);
+                    background-color: var(--editor-background);
+                    color: var(--editor-foreground);
                 }
                 
                 h1, h2, h3, h4, h5, h6 {
-                    color: var(--color-fg-default);
+                    color: var(--editor-foreground);
                 }
                 
                 blockquote {
-                    color: var(--color-fg-muted);
-                    border-left-color: var(--color-border-default);
+                    color: var(--editorLineNumber-foreground);
+                    background-color: var(--textBlockQuote-background);
+                    border-left-color: var(--panel-border);
+                    border-radius: 3px;
                 }
                 
                 th {
-                    background-color: var(--color-canvas-subtle);
-                    color: var(--color-fg-default);
+                    background-color: var(--editor-lineHighlightBackground);
+                    color: var(--editor-foreground);
                 }
                 
                 th, td {
-                    border-color: var(--color-border-default);
+                    border-color: var(--panel-border);
                 }
                 
                 code {
-                    background-color: var(--color-neutral-muted);
-                    color: var(--color-fg-default);
+                    background-color: var(--editor-foldBackground);
+                    color: var(--editor-foreground);
                 }
                 
                 a {
-                    color: var(--color-accent-fg);
+                    color: var(--textLink-foreground);
                 }
             `
     }
