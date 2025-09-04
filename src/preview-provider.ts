@@ -42,7 +42,8 @@ export class MarkdownPreviewProvider implements vscode.WebviewPanelSerializer {
     if (document) {
       const fileName = document.fileName.split('/').pop() || 'Unknown'
       this._panel.title = `Markdown Preview [${fileName}]`
-    } else {
+    }
+    else {
       this._panel.title = 'Markdown Preview'
     }
   }
