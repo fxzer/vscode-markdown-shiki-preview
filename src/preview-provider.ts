@@ -1,4 +1,5 @@
 import type { Highlighter } from 'shiki'
+import * as matter from 'gray-matter'
 import { debounce } from 'lodash-es'
 import MarkdownIt from 'markdown-it'
 import { bundledLanguages, bundledThemes, createHighlighter } from 'shiki'
@@ -355,13 +356,19 @@ export class MarkdownPreviewProvider implements vscode.WebviewPanelSerializer {
     // 更新标签页标题
     this.updatePanelTitle(document)
 
-    const content = document.getText()
+    const rawContent = document.getText()
     const documentUri = document.uri.toString()
+
+    // 使用 gray-matter 分离 front matter 和内容
+    const parsed = matter.default(rawContent)
+    const content = parsed.content // 只使用内容部分，忽略元数据
 
     logger.info('[updateContent] _themeChanged:', this._themeChanged)
     logger.info('[updateContent] _currentShikiTheme:', this._currentShikiTheme)
     logger.info('[updateContent] lastUpdateDocumentUri:', this.lastUpdateDocumentUri)
     logger.info('[updateContent] documentUri:', documentUri)
+    logger.info('[updateContent] Front matter data:', parsed.data)
+    logger.info('[updateContent] Content length:', content.length)
 
     // 避免重复更新同一文档的相同内容
     // 但是如果主题已更改，则强制重新渲染
