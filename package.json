@@ -215,7 +215,7 @@
     "lintfix": "eslint . --fix",
     "test": "vitest",
     "typecheck": "tsc --noEmit",
-    "vscode:prepublish": "echo 'Skipping prepublish'",
+    "vscode:prepublish": "nr build",
     "release": "bumpp",
     "ext:package": "vsce package --no-dependencies",
     "ext:publish": "vsxpub --no-dependencies"

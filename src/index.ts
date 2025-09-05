@@ -153,24 +153,28 @@ const { activate, deactivate } = defineExtension((ctx) => {
     window.registerWebviewPanelSerializer('markdownPreview', provider),
   )
 
-  // 注册命令
-  useCommand('markdownPreview.showPreview', () => {
-    const activeEditor = window.activeTextEditor
-    if (!activeEditor || !activeEditor.document.fileName.endsWith('.md')) {
-      window.showErrorMessage('Please open a Markdown file first')
-      return
-    }
-    provider.showPreview(activeEditor.document)
-  })
+  // 注册命令 - 使用传统的 VSCode API 方式
+  ctx.subscriptions.push(
+    vscode.commands.registerCommand('markdownPreview.showPreview', () => {
+      const activeEditor = window.activeTextEditor
+      if (!activeEditor || !activeEditor.document.fileName.endsWith('.md')) {
+        window.showErrorMessage('Please open a Markdown file first')
+        return
+      }
+      provider.showPreview(activeEditor.document)
+    })
+  )
 
-  useCommand('markdownPreview.switchTheme', async () => {
-    try {
-      await showEnhancedThemePicker(provider)
-    }
-    catch (error) {
-      window.showErrorMessage(`Failed to load themes: ${error}`)
-    }
-  })
+  ctx.subscriptions.push(
+    vscode.commands.registerCommand('markdownPreview.switchTheme', async () => {
+      try {
+        await showEnhancedThemePicker(provider)
+      }
+      catch (error) {
+        window.showErrorMessage(`Failed to load themes: ${error}`)
+      }
+    })
+  )
 
   // 监听活动编辑器变化，自动更新预览内容和滚动同步（带防抖）
   ctx.subscriptions.push(
