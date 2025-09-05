@@ -12,11 +12,12 @@
 
 ### 普通链接
 [GitHub](https://github.com)
-[带标题的链接](https://github.com "GitHub 主页")
+
+[带标题的链接](https://github.com "GitHub 主页")https://github.com
+<https://github.com>
 
 ### 自动链接
-https://github.com
-<https://github.com>
+
 
 ### 引用
 > 这是一个引用块

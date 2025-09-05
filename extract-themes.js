@@ -1,15 +1,43 @@
 const { createHighlighter } = require('shiki')
 const fs = require('fs')
 const path = require('path')
+const chroma = require('chroma-js')
+
+// 简单的前景色提亮函数
+function brightenForegroundColor(originalForeground, themeName) {
+  // 需要前景色提亮的深色主题列表
+  const themesThatNeedBrightening = [
+    'synthwave-84',
+    'min-dark', 
+    'aurora-x'
+  ]
+
+  // 如果主题不需要提亮，直接返回原前景色
+  if (!themesThatNeedBrightening.includes(themeName)) {
+    return originalForeground
+  }
+
+  try {
+    const fgColor = chroma(originalForeground)
+    
+    // 简单提亮：增加亮度值
+    const brightenedColor = fgColor.brighten(0.8) // 提亮 0.8 个单位
+    
+    return brightenedColor.hex()
+  } catch (error) {
+    console.warn(`生成提亮前景色失败 (${themeName}):`, error)
+    return originalForeground
+  }
+}
 
 async function extractThemeCSS() {
   console.log('正在初始化 Shiki 高亮器...')
   
   const highlighter = await createHighlighter({
-    themes: ['github-dark-default', 'vitesse-dark', 'dracula-soft']
+    themes: ['github-dark-default', 'vitesse-dark', 'dracula-soft', 'synthwave-84', 'min-dark', 'aurora-x']
   })
 
-  const themes = ['github-dark-default', 'vitesse-dark', 'dracula-soft']
+  const themes = ['github-dark-default', 'vitesse-dark', 'dracula-soft', 'synthwave-84', 'min-dark', 'aurora-x']
   const outputDir = path.join(__dirname, 'themes-cssvar')
 
   // 确保输出目录存在
@@ -44,6 +72,11 @@ async function extractThemeCSS() {
 
       // 合并主题颜色
       const colors = { ...defaultColors, ...themeData.colors }
+
+      // 对前景色进行提亮处理
+      if (colors['editor.foreground']) {
+        colors['editor.foreground'] = brightenForegroundColor(colors['editor.foreground'], themeName)
+      }
 
       // 生成 CSS 变量
       const cssVariables = Object.entries(colors)

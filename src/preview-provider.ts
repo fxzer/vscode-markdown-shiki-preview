@@ -69,11 +69,6 @@ export class MarkdownPreviewProvider implements vscode.WebviewPanelSerializer {
         langs: Object.keys(bundledLanguages),
       })
 
-      // 打印所有主题编辑器背景色
-      const editorBackgrounds = Object.keys(bundledThemes).map((theme) => {
-        return this._highlighter.getTheme(theme).colors['editor.background']
-      })
-      console.log('[ editorBackgrounds ]-74', editorBackgrounds)
       // 设置主题渲染器的高亮器实例
       this._themeRenderer.setHighlighter(this._highlighter)
 
@@ -427,14 +422,15 @@ export class MarkdownPreviewProvider implements vscode.WebviewPanelSerializer {
 
   private getHtmlForWebview(content: string, theme: string, fontSize: number, lineHeight: number, fontFamily: string): string {
     const nonce = this.getNonce()
-    const themeStyles = this._themeRenderer.getThemeCSS(theme)
+    const themeStyles = this._themeRenderer.getThemeCSS(theme, {
+      fontSize,
+      lineHeight,
+      fontFamily,
+    })
 
     return generateHtmlTemplate({
       content,
       themeStyles,
-      fontSize,
-      lineHeight,
-      fontFamily,
       nonce,
       extensionUri: this._extensionUri.toString(),
     })

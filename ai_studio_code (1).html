@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>动态颜色对比度处理器 | Chroma.js 示例</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+            background-color: #f0f2f5;
+            color: #333;
+            margin: 0;
+            padding: 2rem;
+            line-height: 1.6;
+        }
+        .container {
+            max-width: 1100px; /* 增加了宽度以容纳新列 */
+            margin: 0 auto;
+            background-color: #fff;
+            padding: 2rem;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #111;
+            border-bottom: 2px solid #eee;
+            padding-bottom: 0.5rem;
+            margin-top: 0;
+        }
+        p {
+            color: #555;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 2rem;
+        }
+        th, td {
+            padding:  5px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+            vertical-align: middle; /* 垂直居中对齐 */
+        }
+        th {
+            background-color: #f7f7f7;
+            font-weight: 600;
+        }
+        tr:hover {
+            background-color: #fdfdfd;
+        }
+        .color-swatch {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 120px;
+            height: 50px;
+            border-radius: 6px;
+            font-family: "SF Mono", "Fira Code", "Source Code Pro", monospace;
+            font-weight: bold;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            border: 1px solid rgba(0,0,0,0.1);
+        }
+        code {
+            background-color: #eef;
+            padding: 2px 5px;
+            border-radius: 4px;
+        }
+        
+        /* --- 新增样式 --- */
+        .bg-preview-container {
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+            transition: transform 0.2s ease-in-out;
+        }
+        .bg-preview-container:hover {
+            transform: scale(1.05);
+        }
+        .code-block-preview {
+            padding: 10px;
+            border-radius: 5px;
+            font-family: "SF Mono", "Fira Code", "Source Code Pro", monospace;
+            font-size: 13px;
+            white-space: pre; /* 保留换行和空格 */
+            line-height: 1.5;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>动态颜色对比度处理器</h1>
+        <p>
+            此页面演示了如何根据颜色的初始亮度动态调整颜色。新增的“背景叠加效果”列模拟了 Markdown 页面中，主题背景与代码块背景的层次关系。
+        </p>
+        <table>
+            <thead>
+                <tr>
+                    <th>亮度 (Luminance) 范围</th>
+                    <th>状态</th>
+                    <th>处理前的颜色</th>
+                    <th>处理后的颜色</th>
+                    <th>背景叠加效果</th>
+                </tr>
+            </thead>
+            <tbody id="color-table-body">
+                <!-- JavaScript 将在此处动态生成内容 -->
+            </tbody>
+        </table>
+    </div>
+
+    <!-- 1. 引入 Chroma.js 库 -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/chroma-js/2.4.2/chroma.min.js"></script>
+
+    <!-- 2. 我们的处理逻辑和页面渲染脚本 -->
+    <script>
+        /**
+         * 根据颜色的亮度动态调整对比度。
+         * @returns {object} - 返回一个包含新颜色、状态和亮度信息的对象。
+         */
+        function adjustContrastColor(colorInput, options = {}) {
+            // ... (此函数与之前版本完全相同)
+            const {
+                darkThreshold = 0.2,
+                lightThreshold = 0.8,
+                adjustmentAmount = 0.3
+            } = options;
+
+            const color = chroma(colorInput);
+            const luminance = color.luminance();
+            const midpoint = (darkThreshold + lightThreshold) / 2;
+
+            let newColor;
+            let status, range;
+
+            if (luminance < darkThreshold) {
+                range = `L < ${darkThreshold}`;
+                status = "过暗 → 提亮";
+                newColor = color.brighten(adjustmentAmount);
+            } else if (luminance > lightThreshold) {
+                range = `L > ${lightThreshold}`;
+                status = "过亮 → 压暗";
+                newColor = color.darken(adjustmentAmount);
+            } else {
+                if (luminance < midpoint) {
+                    range = `${darkThreshold} ≤ L < ${midpoint}`;
+                    status = "中间偏暗 → 压暗 (增反差)";
+                    newColor = color.darken(adjustmentAmount / 2);
+                } else {
+                    range = `${midpoint} ≤ L ≤ ${lightThreshold}`;
+                    status = "中间偏亮 → 提亮 (增反差)";
+                    newColor = color.brighten(adjustmentAmount / 2);
+                }
+            }
+            return {
+                originalHex: color.hex(),
+                newHex: newColor.hex(),
+                luminance: luminance,
+                status: status,
+                range: range,
+            };
+        }
+
+        /**
+         * 创建一个颜色预览块
+         */
+        function createColorSwatch(hexColor) {
+            const swatch = document.createElement('div');
+            swatch.className = 'color-swatch';
+            swatch.textContent = hexColor;
+            swatch.style.backgroundColor = hexColor;
+            swatch.style.color = chroma(hexColor).luminance() > 0.5 ? '#000' : '#FFF';
+            return swatch;
+        }
+
+        /**
+         * --- 新增函数 ---
+         * 创建一个背景叠加效果的预览块
+         */
+        function createBgPreview(mainBgHex, codeBgHex) {
+            const container = document.createElement('div');
+            container.className = 'bg-preview-container';
+            container.style.backgroundColor = mainBgHex;
+
+            const codeBlock = document.createElement('div');
+            codeBlock.className = 'code-block-preview';
+            codeBlock.style.backgroundColor = codeBgHex;
+            codeBlock.innerText = `// code snippet...\nconst theme = "awesome";`;
+            
+            // 确保代码块内的文字清晰可见
+            const textColor = chroma(codeBgHex).luminance() > 0.5 ? '#111' : '#eee';
+            codeBlock.style.color = textColor;
+
+            container.appendChild(codeBlock);
+            return container;
+        }
+
+        // 当页面加载完毕后执行
+        document.addEventListener('DOMContentLoaded', () => {
+            // const sampleColors = [
+            //     // 1. 过暗区
+            //     '#0d1117', '#1a111a', '#2a0000',
+            //     // 2. 中间偏暗区
+            //     '#6a6a6a', '#8B0000', '#006400',
+            //     // 3. 中间偏亮区
+            //     '#b1b1b1', '#90ee90', '#add8e6',
+            //     // 4. 过亮区
+            //     '#f5f5f5', '#eeeeee', '#ffffff',
+            // ];
+
+            const sampleColors = ['#23262E', '#07090F', '#0b0e14', '#303446', '#eff1f5', '#24273a', '#1e1e2e', '#1E1E1E', '#282A36', '#282A36', '#2d353b', '#fdf6e3', '#24292e', '#0d1117', '#22272e', '#0a0c10', '#fff', '#ffffff', '#ffffff', '#1d2021', '#282828', '#32302f', '#f9f5d7', '#fbf1c7', '#f2e5bc', '#17191e', '#181616', '#F2ECBC', '#1F1F28', '#27212e', '#FFFFFF', '#263238', '#212121', '#FAFAFA', '#0F111A', '#292D3E', '#1f1f1f', '#ffffff', '#272822', '#011627', '#2e3440', '#282c34', '#FAFAFA', '#21252B', '#1b1e28', '#390000', '#191724', '#faf4ed', '#232136', '#222222', '#FFF', '#FAFBFC', '#002B36', '#FDF6E3', '#262335', '#1a1b26', '#101010', '#000', '#121212', '#ffffff']
+
+
+
+            const tableBody = document.getElementById('color-table-body');
+
+            sampleColors.forEach(hex => {
+                const result = adjustContrastColor(hex);
+                const row = document.createElement('tr');
+
+                // 列1: 亮度范围
+                const cellRange = document.createElement('td');
+                cellRange.innerHTML = `<code>${result.range}</code>`;
+                row.appendChild(cellRange);
+
+                // 列2: 状态
+                const cellStatus = document.createElement('td');
+                cellStatus.textContent = `${result.status}`;
+                row.appendChild(cellStatus);
+
+                // 列3: 处理前的颜色 (主题背景)
+                const cellOriginal = document.createElement('td');
+                cellOriginal.appendChild(createColorSwatch(result.originalHex));
+                row.appendChild(cellOriginal);
+
+                // 列4: 处理后的颜色 (代码块背景)
+                const cellNew = document.createElement('td');
+                cellNew.appendChild(createColorSwatch(result.newHex));
+                row.appendChild(cellNew);
+                
+                // --- 新增的列 ---
+                // 列5: 背景叠加效果
+                const cellPreview = document.createElement('td');
+                cellPreview.appendChild(createBgPreview(result.originalHex, result.newHex));
+                row.appendChild(cellPreview);
+
+                tableBody.appendChild(row);
+            });
+        });
+    </script>
+
+</body>
+</html>
