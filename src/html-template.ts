@@ -75,12 +75,13 @@ export function generateThemeStyles(
   const cssVariablesBlock = `:root {\n        ${cssVariables}\n    }`
   // 布局相关样式 - 不依赖主题变量
   const layoutStyles = `
-        /* 布局相关样式 - 不依赖主题变量 */
-        body {
+        html {
             font-size: ${layoutOptions.fontSize}px;
-            line-height: ${layoutOptions.lineHeight};
+        }
+        body {
             margin: 0;
-            padding: 20px;
+            padding: 1.5rem;
+            line-height: ${layoutOptions.lineHeight};
             font-family: ${layoutOptions.fontFamily};
         }`
   // 生成元素样式
@@ -103,8 +104,8 @@ export function generateThemeStyles(
             color: var(--markdown-darkened-foreground);
             background-color: var(--markdown-blockQuote-background-level1);
             border-left: 4px solid var(--markdown-blockQuote-border);
-            padding: 0.5em 1em;
-            margin: 0 0 1em 0;
+            padding: 0.5rem 1rem;
+            margin: 0 0 1rem 0;
             font-style: italic;
         }
 
@@ -143,10 +144,9 @@ export function generateThemeStyles(
         code {
             background-color: var(--editor-foldBackground);
             color: var(--editor-foreground);
-            padding: 0.2em 0.4em;
+            padding: 0.2rem 0.4rem;
             margin: 0;
-            font-size: 85%;
-            border-radius: 6px;
+            border-radius: 0.2rem;
         }
 
         pre {
@@ -167,9 +167,9 @@ export function generateThemeStyles(
         .shiki {
             background-color: var(--markdown-codeBlock-background) !important;
             border-radius: 6px;
-            padding: 16px;
+            padding: 1rem;
             overflow-x: auto;
-            margin: 16px 0;
+            margin-bottom:1rem;
         }
 
         a {
@@ -181,8 +181,8 @@ export function generateThemeStyles(
         }
 
         h1, h2, h3, h4, h5, h6 {
-            margin-top: 24px;
-            margin-bottom: 16px;
+            margin-top: 1.5em;
+            margin-bottom: 1.5em;
             font-weight: 600;
             line-height: 1.25;
             color: var(--editor-foreground);
@@ -223,8 +223,8 @@ export function generateThemeStyles(
 
         table {
             border-collapse: collapse;
-            margin-bottom: 16px;
-            width: 100%;
+            margin-bottom: 1rem;
+            width: max-content;
         }`
 
   const completeStyles = `${cssVariablesBlock}\n      ${layoutStyles}\n       ${elementStyles}`
