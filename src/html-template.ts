@@ -4,7 +4,7 @@
  */
 
 import chroma from 'chroma-js'
-import { adjustContrastColor, generateBlockquoteBorderColor, generateBlockquoteColors, generateSelectionBackgroundColor, generateBrightenedForegroundColor, isDarkColor } from './color-hander'
+import { adjustContrastColor, generateBlockquoteBorderColor, generateBlockquoteColors, generateBrightenedForegroundColor, generateSelectionBackgroundColor, isDarkColor } from './color-hander'
 
 export interface HtmlTemplateOptions {
   /** 页面内容 */
@@ -191,13 +191,13 @@ export function generateThemeStyles(
         h1 {    
             font-size: 2em; 
             color: var(--markdown-strong-foreground);
-            border-bottom: 1px solid var(--editor-foreground); 
+            border-bottom: 1px solid var(--markdown-blockQuote-border); 
             padding-bottom: 0.3em; 
         }
         h2 { 
             font-size: 1.5em; 
             color: var(--markdown-strong-foreground);
-            border-bottom: 1px solid var(--editor-foreground); 
+            border-bottom: 1px solid var(--markdown-blockQuote-border); 
             padding-bottom: 0.3em; 
         }
         h3 { font-size: 1.25em; }
@@ -206,7 +206,6 @@ export function generateThemeStyles(
         h6 { font-size: 0.85em; }
 
         p { 
-            margin-bottom: 16px; 
             color: var(--editor-foreground);
         }
 
@@ -216,10 +215,9 @@ export function generateThemeStyles(
 
         ul, ol {
             padding-left: 2em;
-            margin-bottom: 16px;
         }
 
-        li {
+       li+li{
             margin-bottom: 0.25em;
         }
 
@@ -252,7 +250,6 @@ function generateEnhancedColors(themeColors: Record<string, string>, isDark: boo
 
     const codeBlockResult = adjustContrastColor(background)
     enhanced['markdown.codeBlock.background'] = codeBlockResult.hex
-    enhanced['markdown.table.border'] = themeColors['panel.border']
 
     // 生成blockquote嵌套层级颜色
     const blockquoteColors = generateBlockquoteColors(background, 5)
@@ -269,8 +266,8 @@ function generateEnhancedColors(themeColors: Record<string, string>, isDark: boo
     const originalBorderColor = themeColors['panel.border']
     const optimizedBorderColor = generateBlockquoteBorderColor(background, originalBorderColor, 3.0)
     enhanced['markdown.blockQuote.border'] = optimizedBorderColor
-
-
+    // chroma取0.5透明度作为表格边框色
+    enhanced['markdown.table.border'] = chroma(optimizedBorderColor).alpha(0.5).css()
 
     let foreground = themeColors['editor.foreground'] || (isDark ? '#ffffff' : '#000000')
     // 为特定主题优化前景色对比度
@@ -285,7 +282,6 @@ function generateEnhancedColors(themeColors: Record<string, string>, isDark: boo
     const originalSelectionBackground = themeColors['editor.selectionBackground']
     const optimizedSelectionBackground = generateSelectionBackgroundColor(foreground, originalSelectionBackground, 3.0)
     enhanced['editor.selectionBackground'] = optimizedSelectionBackground
-
 
     // 基于 editor.foreground 生成对比色，用于替代 editorLineNumber.foreground
     // 如果是纯白色或纯黑色，不处理
