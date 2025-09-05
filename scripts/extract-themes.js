@@ -1,15 +1,15 @@
-const { createHighlighter } = require('shiki')
-const fs = require('fs')
-const path = require('path')
+const fs = require('node:fs')
+const path = require('node:path')
 const chroma = require('chroma-js')
+const { createHighlighter } = require('shiki')
 
 // 简单的前景色提亮函数
 function brightenForegroundColor(originalForeground, themeName) {
   // 需要前景色提亮的深色主题列表
   const themesThatNeedBrightening = [
     'synthwave-84',
-    'min-dark', 
-    'aurora-x'
+    'min-dark',
+    'aurora-x',
   ]
 
   // 如果主题不需要提亮，直接返回原前景色
@@ -19,12 +19,13 @@ function brightenForegroundColor(originalForeground, themeName) {
 
   try {
     const fgColor = chroma(originalForeground)
-    
+
     // 简单提亮：增加亮度值
     const brightenedColor = fgColor.brighten(0.8) // 提亮 0.8 个单位
-    
+
     return brightenedColor.hex()
-  } catch (error) {
+  }
+  catch (error) {
     console.warn(`生成提亮前景色失败 (${themeName}):`, error)
     return originalForeground
   }
@@ -32,9 +33,9 @@ function brightenForegroundColor(originalForeground, themeName) {
 
 async function extractThemeCSS() {
   console.log('正在初始化 Shiki 高亮器...')
-  
+
   const highlighter = await createHighlighter({
-    themes: ['github-dark-default', 'vitesse-dark', 'dracula-soft', 'synthwave-84', 'min-dark', 'aurora-x']
+    themes: ['github-dark-default', 'vitesse-dark', 'dracula-soft', 'synthwave-84', 'min-dark', 'aurora-x'],
   })
 
   const themes = ['github-dark-default', 'vitesse-dark', 'dracula-soft', 'synthwave-84', 'min-dark', 'aurora-x']
@@ -47,10 +48,10 @@ async function extractThemeCSS() {
 
   for (const themeName of themes) {
     console.log(`正在处理主题: ${themeName}`)
-    
+
     try {
       const themeData = highlighter.getTheme(themeName)
-      
+
       if (!themeData || !themeData.colors) {
         console.warn(`主题 ${themeName} 数据不完整`)
         continue
@@ -138,10 +139,10 @@ a {
       // 写入文件
       const outputPath = path.join(outputDir, `${themeName}.css`)
       fs.writeFileSync(outputPath, cssContent)
-      
+
       console.log(`✅ 已生成: ${outputPath}`)
-      
-    } catch (error) {
+    }
+    catch (error) {
       console.error(`❌ 处理主题 ${themeName} 时出错:`, error)
     }
   }

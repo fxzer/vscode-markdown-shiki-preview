@@ -10,14 +10,17 @@
 - 🔄 **实时预览**: 主题切换时立即更新预览内容
 - 📝 **同步滚动**: 编辑器与预览窗口同步滚动
 - 🎯 **主题浏览器**: 侧边栏主题浏览器，方便快速切换
+- 📐 **自定义字体**: 支持多种字体选择和自定义字体大小
 
 ### 技术栈
 - **语言**: TypeScript
 - **框架**: VS Code Extension API + reactive-vscode
 - **语法高亮**: Shiki (基于 TextMate)
+- **Markdown 解析**: markdown-it + @shikijs/markdown-it
 - **构建工具**: tsdown (TypeScript 打包)
 - **包管理**: pnpm
 - **代码风格**: ESLint (@antfu/eslint-config)
+- **测试**: Vitest
 
 ## 项目结构
 
@@ -25,20 +28,34 @@
 vscode-markdown-shiki-preview/
 ├── src/                          # 源代码目录
 │   ├── index.ts                  # 扩展入口点
-│   ├── preview-provider.ts # Markdown 预览提供者
-│   ├── theme-explorer.ts          # 主题浏览器提供者
+│   ├── preview-provider.ts       # Markdown 预览提供者
 │   ├── config.ts                 # 配置管理
+│   ├── html-template.ts          # HTML 模板生成
+│   ├── theme-renderer.ts         # 主题渲染器
+│   ├── color-hander.ts           # 颜色处理器
 │   ├── utils.ts                  # 工具函数
-│   └── generated/                # 生成的元数据
+│   ├── generated/                # 生成的元数据
+│   └── types/                    # TypeScript 类型定义
 ├── scripts/                      # 构建和开发脚本
-│   ├── theme-manager.js          # 主题管理器
 │   └── README.md
 ├── res/                          # 资源文件
 │   ├── icon.png                  # 扩展图标
 │   ├── icon.svg                  # 图标 SVG
 │   └── preview.svg               # 预览图标
 ├── test/                         # 测试文件
-│   └── index.test.ts
+│   ├── index.test.ts             # 测试入口
+│   ├── index.md                  # 测试索引
+│   ├── test-basic-syntax.md      # 基础语法测试
+│   ├── test-code-blocks.md       # 代码块测试
+│   ├── test-details.md           # 折叠容器测试
+│   ├── test-diagrams-and-charts.md # 图表测试
+│   ├── test-images.md            # 图片测试
+│   ├── test-katex.md             # KaTeX 数学公式测试
+│   ├── test-links-and-quotes.md  # 链接和引用测试
+│   ├── test-special-elements.md  # 特殊元素测试
+│   ├── test-tables.md            # 表格测试
+│   └── test-background-block.md  # 背景块测试
+├── themes-cssvar/                # 主题 CSS 变量文件
 ├── dist/                         # 构建输出目录
 ├── .vscode/                      # VS Code 工作区配置
 ├── .github/                      # GitHub Actions 工作流
@@ -46,7 +63,7 @@ vscode-markdown-shiki-preview/
 ├── tsconfig.json                 # TypeScript 配置
 ├── tsdown.config.ts              # 构建配置
 ├── eslint.config.mjs             # ESLint 配置
-└── theme-config.json             # 主题配置缓存
+└── pnpm-workspace.yaml           # 工作区配置
 ```
 
 ## 开发环境设置
@@ -76,22 +93,28 @@ pnpm run typecheck
 
 # 代码格式化
 pnpm run lintfix
+
+# 代码检查
+pnpm run lint
 ```
 
-#### 主题管理
+#### 元数据更新
 ```bash
-# 分析并同步主题配置
-pnpm run update-themes
+# 更新扩展元数据
+pnpm run update
+```
 
-# 仅分析主题
-node scripts/theme-manager.js analyze
-
-# 仅更新 package.json
-node scripts/theme-manager.js update
+#### 测试
+```bash
+# 运行测试
+pnpm run test
 ```
 
 #### 发布相关
 ```bash
+# 版本管理
+pnpm run release
+
 # 打包扩展
 pnpm run ext:package
 
@@ -109,7 +132,7 @@ pnpm run ext:publish
 
 ### 1. 扩展激活 (src/index.ts)
 - 使用 `reactive-vscode` 框架管理扩展生命周期
-- 注册命令、WebView 序列化器和主题浏览器
+- 注册命令和 WebView 序列化器
 - 监听配置变化和文档事件
 
 ### 2. Markdown 预览提供者 (src/preview-provider.ts)
@@ -118,23 +141,40 @@ pnpm run ext:publish
 - 实现滚动同步和内容更新防抖
 - 支持主题实时切换
 
-### 3. 主题浏览器 (src/theme-explorer.ts)
-- 提供侧边栏主题树视图
-- 支持主题选择和预览
-- 与预览窗口同步状态
+### 3. HTML 模板生成 (src/html-template.ts)
+- 生成预览页面的 HTML 模板
+- 处理主题 CSS 注入
+- 管理预览页面的基本结构
 
-### 4. 配置系统 (src/config.ts)
+### 4. 主题渲染器 (src/theme-renderer.ts)
+- 处理主题切换逻辑
+- 生成主题相关的 CSS
+- 管理主题缓存
+
+### 5. 颜色处理器 (src/color-hander.ts)
+- 处理颜色相关的逻辑
+- 支持颜色转换和格式化
+- 管理主题颜色变量
+
+### 6. 配置系统 (src/config.ts)
 - 使用响应式配置管理
 - 支持运行时配置更新
+- 处理配置验证和默认值
+
+### 7. 工具函数 (src/utils.ts)
+- 提供通用工具函数
+- 处理字符串操作
+- 提供防抖和节流功能
 
 ## 配置选项
 
 | 配置项 | 类型 | 默认值 | 描述 |
 |--------|------|--------|------|
-| `markdownPreview.currentTheme` | string | "github-light" | 当前选择的主题 |
+| `markdownPreview.currentTheme` | string | "vitesse-dark" | 当前选择的主题 |
 | `markdownPreview.fontSize` | number | 14 | 预览内容字体大小 |
 | `markdownPreview.lineHeight` | number | 1.6 | 预览内容行高 |
 | `markdownPreview.syncScroll` | boolean | true | 启用同步滚动 |
+| `markdownPreview.fontFamily` | string | "system-ui" | 预览内容字体族 |
 
 ## 扩展命令
 
@@ -163,6 +203,23 @@ pnpm run ext:publish
 
 ## 测试
 
+### 测试文件结构
+
+项目包含全面的测试文件，覆盖各种 Markdown 语法和功能：
+
+- `test-basic-syntax.md` - 基础 Markdown 语法测试
+- `test-code-blocks.md` - 代码块和语法高亮测试
+- `test-details.md` - 折叠容器和标签用法测试
+- `test-diagrams-and-charts.md` - 图表和流程图测试
+- `test-images.md` - 图片和链接测试
+- `test-katex.md` - KaTeX 数学公式测试（包含各种数学符号和公式）
+- `test-links-and-quotes.md` - 链接和引用测试
+- `test-special-elements.md` - 特殊元素测试
+- `test-tables.md` - 表格测试（包含复杂表格和嵌套内容）
+- `test-background-block.md` - 背景块测试
+
+### 运行测试
+
 ```bash
 # 运行测试
 pnpm run test
@@ -178,24 +235,11 @@ pnpm run lint
 
 1. **版本更新**: `pnpm run release`
 2. **构建**: `pnpm run build`
-3. **打包**: `pnpm run ext:package`
-4. **发布**: `pnpm run ext:publish`
+3. **测试验证**: `pnpm run test` 和 `pnpm run typecheck`
+4. **打包**: `pnpm run ext:package`
+5. **发布**: `pnpm run ext:publish`
 
 ## 故障排除
-
-### 常见问题
-
-1. **主题不更新**
-   - 检查 `theme-config.json` 是否存在
-   - 运行 `pnpm run update-themes` 重新生成主题配置
-
-2. **预览不显示**
-   - 确保打开的是 Markdown 文件
-   - 检查 VS Code 开发者工具中的错误日志
-
-3. **构建失败**
-   - 检查 TypeScript 类型错误: `pnpm run typecheck`
-   - 检查 ESLint 错误: `pnpm run lint`
 
 ### 调试技巧
 - 使用 VS Code 开发者工具 (Help > Toggle Developer Tools)
