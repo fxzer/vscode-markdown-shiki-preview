@@ -212,6 +212,8 @@
   },
   "dependencies": {
     "@shikijs/markdown-it": "^3.12.1",
+    "@types/chroma-js": "^3.1.1",
+    "chroma-js": "^3.1.2",
     "lodash-es": "^4.17.21",
     "markdown-it": "^13.0.1",
     "shiki": "^3.12.1"
