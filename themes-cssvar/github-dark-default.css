@@ -1,15 +1,5 @@
 /* github-dark-default 主题 CSS 变量 */
 :root {
-  --editor-background: #0d1117;
-  --editor-lineHighlightBackground: #6e76811a;
-  --editor-foreground: #e6edf3;
-  --editorLineNumber-foreground: #6e7681;
-  --panel-border: #30363d;
-  --editor-selectionBackground: rgba(175,184,193,0.2);
-  --textLink-foreground: #2f81f7;
-  --textCodeBlock-background: #6e768166;
-  --editor-foldBackground: #6e76811a;
-  --textBlockQuote-background: #010409;
   --activityBar-activeBorder: #f78166;
   --activityBar-background: #0d1117;
   --activityBar-border: #30363d;
@@ -53,9 +43,13 @@
   --dropdown-border: #30363d;
   --dropdown-foreground: #e6edf3;
   --dropdown-listBackground: #161b22;
+  --editor-background: #0d1117;
   --editor-findMatchBackground: #9e6a03;
   --editor-findMatchHighlightBackground: #f2cc6080;
   --editor-focusedStackFrameHighlightBackground: #2ea04366;
+  --editor-foldBackground: #6e76811a;
+  --editor-foreground: #e6edf3;
+  --editor-lineHighlightBackground: #6e76811a;
   --editor-linkedEditingBackground: #2f81f712;
   --editor-selectionHighlightBackground: #3fb95040;
   --editor-stackFrameHighlightBackground: #bb800966;
@@ -88,6 +82,7 @@
   --editorInlayHint-typeBackground: #8b949e33;
   --editorInlayHint-typeForeground: #7d8590;
   --editorLineNumber-activeForeground: #e6edf3;
+  --editorLineNumber-foreground: #6e7681;
   --editorOverviewRuler-border: #010409;
   --editorWhitespace-foreground: #484f58;
   --editorWidget-background: #161b22;
@@ -129,6 +124,7 @@
   --notificationsInfoIcon-foreground: #2f81f7;
   --notificationsWarningIcon-foreground: #d29922;
   --panel-background: #010409;
+  --panel-border: #30363d;
   --panelInput-border: #30363d;
   --panelTitle-activeBorder: #f78166;
   --panelTitle-activeForeground: #e6edf3;
@@ -229,8 +225,11 @@
   --terminal-ansiWhite: #b1bac4;
   --terminal-ansiYellow: #d29922;
   --terminal-foreground: #e6edf3;
+  --textBlockQuote-background: #010409;
   --textBlockQuote-border: #30363d;
+  --textCodeBlock-background: #6e768166;
   --textLink-activeForeground: #2f81f7;
+  --textLink-foreground: #2f81f7;
   --textPreformat-background: #6e768166;
   --textPreformat-foreground: #7d8590;
   --textSeparator-foreground: #21262d;
@@ -242,49 +241,4 @@
   --tree-indentGuidesStroke: #21262d;
   --welcomePage-buttonBackground: #21262d;
   --welcomePage-buttonHoverBackground: #30363d;
-}
-
-/* 基础样式 */
-body {
-  background-color: var(--editor-background);
-  color: var(--editor-foreground);
-}
-
-h1, h2, h3, h4, h5, h6 {
-  color: var(--editor-foreground);
-}
-
-blockquote {
-  color: var(--editorLineNumber-foreground);
-  background-color: var(--textBlockQuote-background);
-  border-left-color: var(--panel-border);
-  border-radius: 3px;
-}
-
-th {
-  background-color: var(--editor-lineHighlightBackground);
-  color: var(--editor-foreground);
-}
-
-th, td {
-  border-color: var(--panel-border);
-}
-
-code {
-  background-color: var(--editor-foldBackground);
-  color: var(--editor-foreground);
-}
-
-a {
-  color: var(--textLink-foreground);
-}
-
-/* Shiki 代码块样式 */
-.shiki {
-  background-color: var(--textCodeBlock-background) !important;
-  border: 1px solid var(--panel-border);
-  border-radius: 6px;
-  padding: 16px;
-  overflow-x: auto;
-  margin: 16px 0;
 }

@@ -1,15 +1,5 @@
 /* dracula-soft 主题 CSS 变量 */
 :root {
-  --editor-background: #282A36;
-  --editor-lineHighlightBackground: #f6f8fa;
-  --editor-foreground: #f6f6f4;
-  --editorLineNumber-foreground: #7b7f8b;
-  --panel-border: #bf9eee;
-  --editor-selectionBackground: #44475A;
-  --textLink-foreground: #0969da;
-  --textCodeBlock-background: #f6f8fa;
-  --editor-foldBackground: #21222C80;
-  --textBlockQuote-background: rgba(175,184,193,0.1);
   --activityBar-activeBackground: #BD93F910;
   --activityBar-activeBorder: #FF79C680;
   --activityBar-background: #343746;
@@ -35,12 +25,16 @@
   --dropdown-background: #343746;
   --dropdown-border: #191A21;
   --dropdown-foreground: #f6f6f4;
+  --editor-background: #282A36;
   --editor-findMatchBackground: #FFB86C80;
   --editor-findMatchHighlightBackground: #FFFFFF40;
   --editor-findRangeHighlightBackground: #44475A75;
+  --editor-foldBackground: #21222C80;
+  --editor-foreground: #f6f6f4;
   --editor-hoverHighlightBackground: #8BE9FD50;
   --editor-lineHighlightBorder: #44475A;
   --editor-rangeHighlightBackground: #BD93F915;
+  --editor-selectionBackground: #44475A;
   --editor-selectionHighlightBackground: #424450;
   --editor-snippetFinalTabstopHighlightBackground: #282A36;
   --editor-snippetFinalTabstopHighlightBorder: #62e884;
@@ -67,6 +61,7 @@
   --editorHoverWidget-border: #7b7f8b;
   --editorIndentGuide-activeBackground: #FFFFFF45;
   --editorIndentGuide-background: #FFFFFF1A;
+  --editorLineNumber-foreground: #7b7f8b;
   --editorLink-activeForeground: #97e1f1;
   --editorMarkerNavigation-background: #262626;
   --editorOverviewRuler-addedForeground: #50FA7B80;
@@ -123,6 +118,7 @@
   --merge-currentHeaderBackground: #50FA7B90;
   --merge-incomingHeaderBackground: #BD93F990;
   --panel-background: #282A36;
+  --panel-border: #bf9eee;
   --panelTitle-activeBorder: #f286c4;
   --panelTitle-activeForeground: #f6f6f4;
   --panelTitle-inactiveForeground: #7b7f8b;
@@ -199,49 +195,4 @@
   --titleBar-inactiveBackground: #191A21;
   --titleBar-inactiveForeground: #7b7f8b;
   --walkThrough-embeddedEditorBackground: #262626;
-}
-
-/* 基础样式 */
-body {
-  background-color: var(--editor-background);
-  color: var(--editor-foreground);
-}
-
-h1, h2, h3, h4, h5, h6 {
-  color: var(--editor-foreground);
-}
-
-blockquote {
-  color: var(--editorLineNumber-foreground);
-  background-color: var(--textBlockQuote-background);
-  border-left-color: var(--panel-border);
-  border-radius: 3px;
-}
-
-th {
-  background-color: var(--editor-lineHighlightBackground);
-  color: var(--editor-foreground);
-}
-
-th, td {
-  border-color: var(--panel-border);
-}
-
-code {
-  background-color: var(--editor-foldBackground);
-  color: var(--editor-foreground);
-}
-
-a {
-  color: var(--textLink-foreground);
-}
-
-/* Shiki 代码块样式 */
-.shiki {
-  background-color: var(--textCodeBlock-background) !important;
-  border: 1px solid var(--panel-border);
-  border-radius: 6px;
-  padding: 16px;
-  overflow-x: auto;
-  margin: 16px 0;
 }

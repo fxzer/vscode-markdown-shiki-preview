@@ -1,15 +1,5 @@
 /* synthwave-84 主题 CSS 变量 */
 :root {
-  --editor-background: #262335;
-  --editor-lineHighlightBackground: #f6f8fa;
-  --editor-foreground: #44494e;
-  --editorLineNumber-foreground: #ffffff73;
-  --panel-border: #d0d7de;
-  --editor-selectionBackground: #ffffff20;
-  --textLink-foreground: #f97e72;
-  --textCodeBlock-background: #f6f8fa;
-  --editor-foldBackground: rgba(175,184,193,0.15);
-  --textBlockQuote-background: rgba(175,184,193,0.1);
   --activityBar-background: #171520;
   --activityBar-dropBackground: #34294f66;
   --activityBar-foreground: #ffffffCC;
@@ -24,12 +14,14 @@
   --diffEditor-removedTextBackground: #fe445035;
   --dropdown-background: #232530;
   --dropdown-listBackground: #2a2139;
+  --editor-background: #262335;
   --editor-findMatchBackground: #D18616bb;
   --editor-findMatchHighlightBackground: #D1861655;
   --editor-findRangeHighlightBackground: #34294f1a;
   --editor-hoverHighlightBackground: #463564;
   --editor-lineHighlightBorder: #7059AB66;
   --editor-rangeHighlightBackground: #49549539;
+  --editor-selectionBackground: #ffffff20;
   --editor-selectionHighlightBackground: #ffffff20;
   --editor-wordHighlightBackground: #34294f88;
   --editor-wordHighlightStrongBackground: #34294f88;
@@ -48,6 +40,7 @@
   --editorIndentGuide-activeBackground: #A148AB80;
   --editorIndentGuide-background: #444251;
   --editorLineNumber-activeForeground: #ffffffcc;
+  --editorLineNumber-foreground: #ffffff73;
   --editorOverviewRuler-addedForeground: #09f7a099;
   --editorOverviewRuler-border: #34294fb3;
   --editorOverviewRuler-deletedForeground: #fe445099;
@@ -140,53 +133,9 @@
   --terminalCursor-background: #ffffff;
   --terminalCursor-foreground: #03edf9;
   --textLink-activeForeground: #ff7edb;
+  --textLink-foreground: #f97e72;
   --titleBar-activeBackground: #241b2f;
   --titleBar-inactiveBackground: #241b2f;
   --walkThrough-embeddedEditorBackground: #232530;
   --widget-shadow: #2a2139;
-}
-
-/* 基础样式 */
-body {
-  background-color: var(--editor-background);
-  color: var(--editor-foreground);
-}
-
-h1, h2, h3, h4, h5, h6 {
-  color: var(--editor-foreground);
-}
-
-blockquote {
-  color: var(--editorLineNumber-foreground);
-  background-color: var(--textBlockQuote-background);
-  border-left-color: var(--panel-border);
-  border-radius: 3px;
-}
-
-th {
-  background-color: var(--editor-lineHighlightBackground);
-  color: var(--editor-foreground);
-}
-
-th, td {
-  border-color: var(--panel-border);
-}
-
-code {
-  background-color: var(--editor-foldBackground);
-  color: var(--editor-foreground);
-}
-
-a {
-  color: var(--textLink-foreground);
-}
-
-/* Shiki 代码块样式 */
-.shiki {
-  background-color: var(--textCodeBlock-background) !important;
-  border: 1px solid var(--panel-border);
-  border-radius: 6px;
-  padding: 16px;
-  overflow-x: auto;
-  margin: 16px 0;
 }

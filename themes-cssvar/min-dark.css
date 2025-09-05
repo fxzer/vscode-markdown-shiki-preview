@@ -1,15 +1,5 @@
 /* min-dark 主题 CSS 变量 */
 :root {
-  --editor-background: #1f1f1f;
-  --editor-lineHighlightBackground: #f6f8fa;
-  --editor-foreground: #44494e;
-  --editorLineNumber-foreground: #727272;
-  --panel-border: #d0d7de;
-  --editor-selectionBackground: rgba(175,184,193,0.2);
-  --textLink-foreground: #CCC;
-  --textCodeBlock-background: #f6f8fa;
-  --editor-foldBackground: rgba(175,184,193,0.15);
-  --textBlockQuote-background: rgba(175,184,193,0.1);
   --activityBar-background: #1A1A1A;
   --activityBar-foreground: #7D7D7D;
   --activityBarBadge-background: #383838;
@@ -33,11 +23,13 @@
   --debugIcon-stopForeground: #79b8ff;
   --diffEditor-insertedTextBackground: #3a632a4b;
   --diffEditor-removedTextBackground: #88063852;
+  --editor-background: #1f1f1f;
   --editor-lineHighlightBorder: #303030;
   --editorGroupHeader-tabsBackground: #1A1A1A;
   --editorGroupHeader-tabsBorder: #1A1A1A;
   --editorIndentGuide-activeBackground: #383838;
   --editorIndentGuide-background: #2A2A2A;
+  --editorLineNumber-foreground: #727272;
   --editorRuler-foreground: #2A2A2A;
   --editorSuggestWidget-background: #1A1A1A;
   --focusBorder: #444;
@@ -89,51 +81,7 @@
   --tab-inactiveForeground: #727272;
   --terminal-ansiBrightBlack: #5c5c5c;
   --textLink-activeForeground: #fafafa;
+  --textLink-foreground: #CCC;
   --titleBar-activeBackground: #1A1A1A;
   --titleBar-border: #00000000;
-}
-
-/* 基础样式 */
-body {
-  background-color: var(--editor-background);
-  color: var(--editor-foreground);
-}
-
-h1, h2, h3, h4, h5, h6 {
-  color: var(--editor-foreground);
-}
-
-blockquote {
-  color: var(--editorLineNumber-foreground);
-  background-color: var(--textBlockQuote-background);
-  border-left-color: var(--panel-border);
-  border-radius: 3px;
-}
-
-th {
-  background-color: var(--editor-lineHighlightBackground);
-  color: var(--editor-foreground);
-}
-
-th, td {
-  border-color: var(--panel-border);
-}
-
-code {
-  background-color: var(--editor-foldBackground);
-  color: var(--editor-foreground);
-}
-
-a {
-  color: var(--textLink-foreground);
-}
-
-/* Shiki 代码块样式 */
-.shiki {
-  background-color: var(--textCodeBlock-background) !important;
-  border: 1px solid var(--panel-border);
-  border-radius: 6px;
-  padding: 16px;
-  overflow-x: auto;
-  margin: 16px 0;
 }

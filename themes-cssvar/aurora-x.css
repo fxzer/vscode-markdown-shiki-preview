@@ -1,15 +1,5 @@
 /* aurora-x 主题 CSS 变量 */
 :root {
-  --editor-background: #07090F;
-  --editor-lineHighlightBackground: #f6f8fa;
-  --editor-foreground: #44494e;
-  --editorLineNumber-foreground: #262e47bb;
-  --panel-border: #15182B;
-  --editor-selectionBackground: #262E47;
-  --textLink-foreground: #86A5FF;
-  --textCodeBlock-background: #f6f8fa;
-  --editor-foldBackground: rgba(175,184,193,0.15);
-  --textBlockQuote-background: rgba(175,184,193,0.1);
   --activityBar-background: #07090F;
   --activityBar-foreground: #86A5FF;
   --activityBar-inactiveForeground: #576dafc5;
@@ -30,9 +20,11 @@
   --diffEditor-removedTextBackground: #dd50742c;
   --dropdown-background: #15182B;
   --dropdown-foreground: #c7d5ff99;
+  --editor-background: #07090F;
   --editor-findMatchBackground: #576daf;
   --editor-findMatchHighlightBackground: #262E47;
   --editor-inactiveSelectionBackground: #262e47be;
+  --editor-selectionBackground: #262E47;
   --editor-selectionHighlightBackground: #262E47;
   --editor-wordHighlightBackground: #262E47;
   --editor-wordHighlightStrongBackground: #262E47;
@@ -45,6 +37,7 @@
   --editorGroup-emptyBackground: #07090F;
   --editorGroupHeader-tabsBackground: #07090F;
   --editorLineNumber-activeForeground: #576dafd8;
+  --editorLineNumber-foreground: #262e47bb;
   --editorWidget-background: #15182B;
   --editorWidget-border: #576daf;
   --extensionButton-prominentBackground: #C7D5FF;
@@ -78,6 +71,7 @@
   --list-warningForeground: #e6db7f;
   --notificationCenterHeader-background: #15182B;
   --notifications-background: #15182B;
+  --panel-border: #15182B;
   --panelTitle-activeBorder: #86A5FF;
   --panelTitle-activeForeground: #C7D5FF;
   --panelTitle-inactiveForeground: #576daf;
@@ -105,54 +99,10 @@
   --terminal-ansiGreen: #63eb90;
   --terminal-ansiRed: #dd5073;
   --terminal-foreground: #A8BEFF;
+  --textLink-foreground: #86A5FF;
   --titleBar-activeBackground: #07090F;
   --titleBar-activeForeground: #86A5FF;
   --titleBar-inactiveBackground: #07090F;
   --tree-indentGuidesStroke: #576daf;
   --widget-shadow: #01030b;
-}
-
-/* 基础样式 */
-body {
-  background-color: var(--editor-background);
-  color: var(--editor-foreground);
-}
-
-h1, h2, h3, h4, h5, h6 {
-  color: var(--editor-foreground);
-}
-
-blockquote {
-  color: var(--editorLineNumber-foreground);
-  background-color: var(--textBlockQuote-background);
-  border-left-color: var(--panel-border);
-  border-radius: 3px;
-}
-
-th {
-  background-color: var(--editor-lineHighlightBackground);
-  color: var(--editor-foreground);
-}
-
-th, td {
-  border-color: var(--panel-border);
-}
-
-code {
-  background-color: var(--editor-foldBackground);
-  color: var(--editor-foreground);
-}
-
-a {
-  color: var(--textLink-foreground);
-}
-
-/* Shiki 代码块样式 */
-.shiki {
-  background-color: var(--textCodeBlock-background) !important;
-  border: 1px solid var(--panel-border);
-  border-radius: 6px;
-  padding: 16px;
-  overflow-x: auto;
-  margin: 16px 0;
 }
