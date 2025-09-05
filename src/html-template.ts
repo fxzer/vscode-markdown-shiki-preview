@@ -225,6 +225,251 @@ export function generateThemeStyles(
             border-collapse: collapse;
             margin-bottom: 1rem;
             width: max-content;
+        }
+
+        /* 折叠内容样式 */
+        details {
+            margin: 1rem 0;
+            border: 1px solid var(--markdown-table-border);
+            border-radius: 6px;
+            background-color: var(--markdown-codeBlock-background);
+        }
+
+        summary {
+            padding: 0.75rem 1rem;
+            cursor: pointer;
+            font-weight: 600;
+            background-color: var(--markdown-tableHeader-background);
+            border-radius: 6px 6px 0 0;
+            user-select: none;
+            transition: background-color 0.2s ease;
+        }
+
+        summary:hover {
+            background-color: var(--editor-foldBackground);
+        }
+
+        details[open] summary {
+            border-radius: 6px 6px 0 0;
+        }
+
+        details > *:not(summary) {
+            padding: 0 1rem 1rem 1rem;
+        }
+
+        /* 图片样式 */
+        img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 6px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            margin: 0.5rem 0;
+        }
+
+        /* 文本强调元素样式 */
+        strong, b {
+            font-weight: 600;
+            color: var(--markdown-strong-foreground);
+        }
+
+        em, i {
+            font-style: italic;
+            color: var(--editor-foreground);
+        }
+
+        del, s {
+            text-decoration: line-through;
+            opacity: 0.7;
+        }
+
+        ins {
+            text-decoration: underline;
+            background-color: var(--markdown-blockQuote-background-level1);
+            padding: 0.1em 0.2em;
+            border-radius: 3px;
+        }
+
+        mark {
+            background-color: #fff3cd;
+            color: #856404;
+            padding: 0.1em 0.2em;
+            border-radius: 3px;
+        }
+
+        u {
+            text-decoration: underline;
+        }
+
+        /* 脚注样式 */
+        .footnote-ref {
+            font-size: 0.8em;
+            vertical-align: super;
+            color: var(--textLink-foreground);
+            text-decoration: none;
+            margin-left: 0.2em;
+        }
+
+        .footnote-ref:hover {
+            text-decoration: underline;
+        }
+
+        .footnotes {
+            margin-top: 2rem;
+            padding-top: 1rem;
+            border-top: 1px solid var(--markdown-table-border);
+            font-size: 0.9em;
+        }
+
+        .footnotes ol {
+            padding-left: 1.5em;
+        }
+
+        .footnotes li {
+            margin-bottom: 0.5em;
+        }
+
+        /* 定义列表样式 */
+        dl {
+            margin: 1rem 0;
+        }
+
+        dt {
+            font-weight: 600;
+            color: var(--markdown-strong-foreground);
+            margin-top: 1rem;
+            margin-bottom: 0.5rem;
+        }
+
+        dd {
+            margin-left: 1.5rem;
+            margin-bottom: 0.5rem;
+            color: var(--editor-foreground);
+        }
+
+        /* 任务列表样式 */
+        .task-list-item {
+            list-style-type: none;
+            margin-left: -1.5em;
+        }
+
+        .task-list-item input[type="checkbox"] {
+            margin-right: 0.5rem;
+            vertical-align: middle;
+        }
+
+        .task-list-item input[type="checkbox"]:checked + * {
+            text-decoration: line-through;
+            opacity: 0.7;
+        }
+
+        /* 其他语义元素样式 */
+        kbd {
+            background-color: var(--markdown-codeBlock-background);
+            border: 1px solid var(--markdown-table-border);
+            border-radius: 3px;
+            box-shadow: 0 1px 0 var(--markdown-table-border);
+            color: var(--editor-foreground);
+            display: inline-block;
+            font-family: monospace;
+            font-size: 0.9em;
+            padding: 0.2em 0.4em;
+            white-space: nowrap;
+        }
+
+        samp {
+            background-color: var(--markdown-codeBlock-background);
+            color: var(--editor-foreground);
+            font-family: monospace;
+            font-size: 0.9em;
+            padding: 0.2em 0.4em;
+            border-radius: 3px;
+        }
+
+        var {
+            font-style: italic;
+            color: var(--textLink-foreground);
+        }
+
+        cite {
+            font-style: italic;
+            color: var(--markdown-strong-foreground);
+        }
+
+        abbr {
+            border-bottom: 1px dotted var(--markdown-table-border);
+            cursor: help;
+        }
+
+        dfn {
+            font-style: italic;
+            font-weight: 600;
+            color: var(--markdown-strong-foreground);
+        }
+
+        sub, sup {
+            font-size: 0.75em;
+            line-height: 0;
+            position: relative;
+            vertical-align: baseline;
+        }
+
+        sub {
+            bottom: -0.25em;
+        }
+
+        sup {
+            top: -0.5em;
+        }
+
+        small {
+            font-size: 0.875em;
+            opacity: 0.8;
+        }
+
+        big {
+            font-size: 1.125em;
+        }
+
+        /* 代码相关样式增强 */
+        code {
+            font-family: 'SFMono-Regular', 'Consolas', 'Liberation Mono', 'Menlo', monospace;
+        }
+
+        /* 表格样式增强 */
+        table {
+            border-spacing: 0;
+            border-collapse: separate;
+        }
+
+        table th:first-child,
+        table td:first-child {
+            border-left: none;
+        }
+
+        table th:last-child,
+        table td:last-child {
+            border-right: none;
+        }
+
+        /* 列表样式增强 */
+        ul ul, ol ol, ul ol, ol ul {
+            margin-top: 0.25rem;
+            margin-bottom: 0.25rem;
+        }
+
+        /* 引用样式增强 */
+        blockquote p:last-child {
+            margin-bottom: 0;
+        }
+
+        /* 链接样式增强 */
+        a:visited {
+            color: var(--textLink-foreground);
+        }
+
+        a:focus {
+            outline: 2px solid var(--textLink-foreground);
+            outline-offset: 2px;
         }`
 
   const completeStyles = `${cssVariablesBlock}\n      ${layoutStyles}\n       ${elementStyles}`
