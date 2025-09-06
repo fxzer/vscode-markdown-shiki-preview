@@ -22,39 +22,101 @@ const mermaidConfig = {
   flowchart: {
     useMaxWidth: true,
     htmlLabels: true,
-    curve: 'basis'
+    curve: 'basis',
   },
   sequence: {
     useMaxWidth: true,
-    wrap: true
+    wrap: true,
   },
   gantt: {
-    useMaxWidth: true
+    useMaxWidth: true,
   },
   journey: {
-    useMaxWidth: true
+    useMaxWidth: true,
   },
   pie: {
-    useMaxWidth: true
-  }
+    useMaxWidth: true,
+  },
+}
+
+// Mermaid 库是否已加载
+let mermaidLoaded = false
+let mermaidLoading = false
+
+// 动态加载 Mermaid 库
+function loadMermaidLibrary() {
+  return new Promise((resolve, reject) => {
+    if (typeof mermaid !== 'undefined') {
+      mermaidLoaded = true
+      resolve()
+      return
+    }
+
+    if (mermaidLoading) {
+      // 如果正在加载，等待加载完成
+      const checkInterval = setInterval(() => {
+        if (typeof mermaid !== 'undefined') {
+          clearInterval(checkInterval)
+          mermaidLoaded = true
+          mermaidLoading = false
+          resolve()
+        }
+      }, 100)
+
+      // 10秒超时
+      setTimeout(() => {
+        clearInterval(checkInterval)
+        mermaidLoading = false
+        reject(new Error('Mermaid 库加载超时'))
+      }, 10000)
+
+      return
+    }
+
+    mermaidLoading = true
+
+    // 创建脚本标签
+    const script = document.createElement('script')
+    script.id = 'mermaid-script'
+    script.src = 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js'
+    script.async = true
+
+    script.onload = () => {
+      mermaidLoaded = true
+      mermaidLoading = false
+      console.log('Mermaid 库加载成功')
+      resolve()
+    }
+
+    script.onerror = () => {
+      mermaidLoading = false
+      console.error('Mermaid 库加载失败')
+      reject(new Error('Mermaid 库加载失败'))
+    }
+
+    document.head.appendChild(script)
+  })
 }
 
 // 初始化mermaid
-function initMermaid() {
+async function initMermaid() {
   console.log('尝试初始化 Mermaid...')
-  if (typeof mermaid !== 'undefined') {
+
+  try {
+    // 先加载 Mermaid 库
+    await loadMermaidLibrary()
+
     console.log('Mermaid 库已加载，正在初始化...')
     mermaid.initialize(mermaidConfig)
-    
+
     // 等待一小段时间确保 DOM 完全加载
     setTimeout(() => {
       console.log('开始渲染 Mermaid 图表...')
       renderMermaidCharts()
     }, 500)
-  } else {
-    console.warn('Mermaid 库未加载，等待加载...')
-    // 如果 Mermaid 库尚未加载，等待一段时间后重试
-    setTimeout(initMermaid, 1000)
+  }
+  catch (error) {
+    console.error('Mermaid 初始化失败:', error)
   }
 }
 
@@ -62,31 +124,34 @@ function initMermaid() {
 function renderMermaidCharts() {
   const mermaidElements = document.querySelectorAll('.mermaid')
   console.log(`找到 ${mermaidElements.length} 个 Mermaid 代码块`)
-  
+
+  if (mermaidElements.length === 0) {
+    return
+  }
+
   mermaidElements.forEach((element, index) => {
     const graphDefinition = element.textContent.trim()
     const graphId = `graph-${index}-${Date.now()}`
-    
+
     try {
       // 使用最新的mermaid API
-      mermaid.render(graphId, graphDefinition).then(({svg}) => {
+      mermaid.render(graphId, graphDefinition).then(({ svg }) => {
         element.innerHTML = svg
-      }).catch(error => {
+      }).catch((error) => {
         console.error('Mermaid render error:', error)
         element.innerHTML = `<pre style="color: red;">Mermaid渲染错误: ${error.message}</pre>`
       })
-    } catch (error) {
+    }
+    catch (error) {
       console.error('Mermaid error:', error)
       element.innerHTML = `<pre style="color: red;">Mermaid解析错误: ${error.message}</pre>`
     }
   })
 }
 
-// 等待 DOM 加载完成后初始化 Mermaid
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', initMermaid)
-} else {
-  initMermaid()
+// 检查是否有 Mermaid 代码块
+function hasMermaidBlocks() {
+  return document.querySelectorAll('.mermaid').length > 0
 }
 
 // 监听内容变化，重新渲染 Mermaid 图表
@@ -94,15 +159,15 @@ const observer = new MutationObserver((mutations) => {
   mutations.forEach((mutation) => {
     if (mutation.addedNodes) {
       // 检查是否有新的 Mermaid 代码块添加
-      const hasNewMermaid = Array.from(mutation.addedNodes).some(node => {
+      const hasNewMermaid = Array.from(mutation.addedNodes).some((node) => {
         if (node.nodeType === Node.ELEMENT_NODE) {
-          return node.classList?.contains('mermaid') || 
-                 node.querySelector?.('.mermaid') !== null
+          return node.classList?.contains('mermaid')
+            || node.querySelector?.('.mermaid') !== null
         }
         return false
       })
-      
-      if (hasNewMermaid && typeof mermaid !== 'undefined') {
+
+      if (hasNewMermaid && mermaidLoaded) {
         console.log('检测到新的 Mermaid 代码块，重新渲染...')
         renderMermaidCharts()
       }
@@ -113,18 +178,64 @@ const observer = new MutationObserver((mutations) => {
 // 开始观察整个文档的变化
 observer.observe(document.body, {
   childList: true,
-  subtree: true
+  subtree: true,
 })
 
-// 监听VSCode主题变化
-window.addEventListener('message', event => {
+// 监听VSCode消息
+window.addEventListener('message', (event) => {
   const message = event.data
+
+  // 处理主题变化
   if (message.type === 'updateTheme') {
     mermaidConfig.theme = message.theme
-    mermaid.initialize(mermaidConfig)
-    renderMermaidCharts()
+    if (mermaidLoaded) {
+      mermaid.initialize(mermaidConfig)
+      renderMermaidCharts()
+    }
+  }
+
+  // 处理 Mermaid 初始化命令
+  if (message.command === 'initMermaid') {
+    console.log('收到 initMermaid 命令，开始初始化 Mermaid...')
+    initMermaid()
+  }
+
+  // 处理 Mermaid 开关变化
+  if (message.command === 'toggleMermaid') {
+    const enableMermaid = message.enabled
+
+    if (enableMermaid) {
+      // 启用 Mermaid
+      if (hasMermaidBlocks()) {
+        initMermaid()
+      }
+    }
+    else {
+      // 禁用 Mermaid - 将所有 Mermaid 代码块转换为普通代码块
+      const mermaidElements = document.querySelectorAll('.mermaid')
+      mermaidElements.forEach((element) => {
+        const code = element.textContent.trim()
+        element.outerHTML = `<pre><code class="language-mermaid">${code}</code></pre>`
+      })
+    }
   }
 })
+
+// 初始检查是否需要加载 Mermaid
+function checkInitialMermaidState() {
+  // 通知扩展检查是否需要启用 Mermaid
+  vscode.postMessage({
+    command: 'checkMermaidState',
+  })
+}
+
+// 等待 DOM 加载完成后检查初始状态
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', checkInitialMermaidState)
+}
+else {
+  checkInitialMermaidState()
+}
 
 // 滚动同步 - 优化版本，带防抖、阈值控制和缓存
 let isScrollingFromEditor = false

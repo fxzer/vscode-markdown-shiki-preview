@@ -74,6 +74,17 @@ export class MarkdownPreviewProvider implements vscode.WebviewPanelSerializer {
             case 'scroll':
               this._scrollSyncManager.handlePreviewScroll(message.scrollPercentage, message.source, message.timestamp)
               break
+            case 'checkMermaidState':
+              // WebView 请求检查 Mermaid 初始状态
+              { const enableMermaid = configService.getEnableMermaid(this._contentManager.getCurrentDocument()?.uri)
+              const hasMermaidBlocks = this._contentManager.getCurrentDocument()?.getText().includes('```mermaid') || false
+
+              if (enableMermaid && hasMermaidBlocks) {
+                this._panel?.webview.postMessage({
+                  command: 'initMermaid',
+                })
+              }
+              break }
           }
         },
         undefined,
@@ -130,6 +141,17 @@ export class MarkdownPreviewProvider implements vscode.WebviewPanelSerializer {
             break
           case 'scroll':
             this._scrollSyncManager.handlePreviewScroll(message.scrollPercentage, message.source, message.timestamp)
+            break
+          case 'checkMermaidState':
+            // WebView 请求检查 Mermaid 初始状态
+            const enableMermaid = configService.getEnableMermaid(this._contentManager.getCurrentDocument()?.uri)
+            const hasMermaidBlocks = this._contentManager.getCurrentDocument()?.getText().includes('```mermaid') || false
+
+            if (enableMermaid && hasMermaidBlocks) {
+              this._panel?.webview.postMessage({
+                command: 'initMermaid',
+              })
+            }
             break
         }
       },
@@ -293,6 +315,25 @@ export class MarkdownPreviewProvider implements vscode.WebviewPanelSerializer {
         }
         else {
           this._scrollSyncManager.disableScrollSync()
+        }
+      }),
+    )
+
+    // 监听 Mermaid 预览配置的变化
+    disposables.push(
+      configService.onConfigChange<boolean>('enableMermaid', (enabled) => {
+        if (this._panel) {
+          logger.info(`Mermaid 预览配置发生变化，新值: ${enabled}`)
+          // 通知 WebView 更新 Mermaid 状态
+          this._panel.webview.postMessage({
+            command: 'toggleMermaid',
+            enabled,
+          })
+
+          // 强制更新内容以重新渲染 Mermaid 代码块
+          if (this._contentManager.getCurrentDocument()) {
+            this.updateContent(this._contentManager.getCurrentDocument()!)
+          }
         }
       }),
     )

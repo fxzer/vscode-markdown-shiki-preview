@@ -197,6 +197,11 @@
           "type": "string",
           "default": "1000px",
           "description": "Controls the container width for preview content. Accepts CSS width values like '800px', '50%', '100vw', etc."
+        },
+        "markdownPreview.enableMermaid": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable Mermaid diagram preview. Disabling this can improve performance for documents with many diagrams."
         }
       }
     }

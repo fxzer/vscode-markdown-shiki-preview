@@ -143,6 +143,7 @@ export class ConfigService {
       fontFamily: this.getFontFamily(resource),
       syncScroll: this.getSyncScroll(resource),
       documentWidth: this.getDocumentWidth(resource),
+      enableMermaid: this.getEnableMermaid(resource),
     }
   }
 
@@ -189,6 +190,13 @@ export class ConfigService {
   }
 
   /**
+   * 获取 Mermaid 预览开关配置
+   */
+  public getEnableMermaid(resource?: vscode.Uri): boolean {
+    return this.getConfig('enableMermaid', true, resource)
+  }
+
+  /**
    * 清除配置缓存
    */
   public clearCache(key?: string, resource?: vscode.Uri): void {
@@ -212,6 +220,7 @@ export class ConfigService {
       'markdownPreview.fontFamily',
       'markdownPreview.syncScroll',
       'markdownPreview.documentWidth',
+      'markdownPreview.enableMermaid',
     ]
 
     for (const fullKey of relevantKeys) {
@@ -265,6 +274,7 @@ export class ConfigService {
       fontFamily: 'system-ui, -apple-system, BlinkMacSystemFont, sans-serif',
       syncScroll: true,
       documentWidth: '1000px',
+      enableMermaid: true,
     }
     return defaults[key]
   }

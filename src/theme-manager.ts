@@ -100,7 +100,7 @@ export class ThemeManager {
     }
 
     // 保存默认的fence渲染器
-    const defaultFenceRenderer = this._md.renderer.rules.fence || function(tokens, idx, options, env, self) {
+    const defaultFenceRenderer = this._md.renderer.rules.fence || function (tokens, idx, options, env, self) {
       return self.renderToken(tokens, idx, options)
     }
 
@@ -108,16 +108,25 @@ export class ThemeManager {
     this._md.renderer.rules.fence = (tokens, idx, options, env, self) => {
       const token = tokens[idx]
       const info = token.info ? token.info.trim() : ''
-      
+
       // 检查是否是Mermaid代码块
       if (info === 'mermaid') {
-        const code = token.content.trim()
-        const id = `mermaid-${idx}-${Date.now()}`
-        
-        // 直接返回mermaid div，让前端JS处理
-        return `<div class="mermaid" id="${id}">${code}</div>`
+        // 检查是否启用了Mermaid预览
+        const enableMermaid = configService.getEnableMermaid(this._currentDocument?.uri)
+
+        if (enableMermaid) {
+          const code = token.content.trim()
+          const id = `mermaid-${idx}-${Date.now()}`
+
+          // 直接返回mermaid div，让前端JS处理
+          return `<div class="mermaid" id="${id}">${code}</div>`
+        }
+        else {
+          // 如果未启用Mermaid预览，作为普通代码块处理
+          return defaultFenceRenderer(tokens, idx, options, env, self)
+        }
       }
-      
+
       // 对于非Mermaid代码块，使用默认的高亮渲染
       return defaultFenceRenderer(tokens, idx, options, env, self)
     }

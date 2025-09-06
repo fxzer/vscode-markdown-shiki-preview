@@ -8,6 +8,7 @@ export const {
   syncScroll,
   fontFamily,
   documentWidth,
+  enableMermaid,
 } = defineConfigs('markdownPreview', {
   currentTheme: {
     type: String,
@@ -32,5 +33,9 @@ export const {
   documentWidth: {
     type: String,
     default: '1000px',
+  },
+  enableMermaid: {
+    type: Boolean,
+    default: true,
   },
 })

@@ -108,7 +108,7 @@ sequenceDiagram
     participant Client
     participant Server
     participant Database
-    
+
     loop 每日检查
         Client->>Server: 请求数据
         alt 数据存在
@@ -207,7 +207,7 @@ resourceDiagram
         磁盘 90%
     }
     resource 缓存服务器 {
-        CPU 30% 
+        CPU 30%
         内存 65%
         磁盘 20%
     }
@@ -222,22 +222,22 @@ requirementDiagram
         risk: high
         verifyMethod: test
     }
-    
+
     requirement 性能要求 {
         id: 2
         text: 系统响应时间必须小于2秒
         risk: medium
         verifyMethod: test
     }
-    
+
     element 用户模块 {
         type: 模块
     }
-    
+
     element 数据库 {
         type: 组件
     }
-    
+
     系统功能 - satisfies -> 用户模块
     性能要求 - satisfies -> 数据库
 ```
@@ -246,11 +246,11 @@ requirementDiagram
 ```mermaid
 C4Context
     title 系统上下文图
-    
+
     Person(用户, "系统用户", "使用系统的人员")
     System(系统, "示例系统", "处理业务逻辑的核心系统")
     System_Ext(外部系统, "外部API", "提供数据的外部服务")
-    
+
     Rel(用户, 系统, "使用")
     Rel(系统, 外部系统, "调用API")
 ```
@@ -263,7 +263,7 @@ graph LR
     B -->|条件2| D[处理2];
     C --> E[结束];
     D --> E;
-    
+
     style A fill:#f9f,stroke:#333,stroke-width:2px
     style E fill:#bbf,stroke:#333,stroke-width:2px
 ```
