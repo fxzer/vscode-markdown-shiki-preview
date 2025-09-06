@@ -1,6 +1,7 @@
 import type { Highlighter } from 'shiki'
 import * as matter from 'gray-matter'
 import MarkdownIt from 'markdown-it'
+import markdownItKatex from 'markdown-it-katex'
 import { bundledLanguages, bundledThemes, createHighlighter } from 'shiki'
 import * as vscode from 'vscode'
 import { configService } from './config-service'
@@ -35,6 +36,9 @@ export class ThemeManager {
       linkify: true,
       typographer: true,
     })
+
+    // 集成 KaTeX 数学公式支持
+    this._md.use(markdownItKatex)
 
     this.initializeHighlighter()
   }

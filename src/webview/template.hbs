@@ -3,8 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline' {{extensionUri}}; script-src 'nonce-{{nonce}}' 'unsafe-inline' https://cdn.jsdelivr.net; img-src data: https:;">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline' {{extensionUri}} https://cdn.jsdelivr.net; script-src 'nonce-{{nonce}}' 'unsafe-inline' https://cdn.jsdelivr.net; img-src data: https:;">
     <title>Markdown Preview</title>
+    <!-- KaTeX CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/katex.min.css" integrity="sha384-31gKk4u8f5v/7jU4v6m5U4v6m5U4v6m5U4v6m5U4v6m5U4v6m5U4v6m5U4v6m5U4v6m5U4v6" crossorigin="anonymous">
     <style>
         {{{themeStyles}}}
     </style>
@@ -16,5 +18,7 @@
     <script nonce="{{nonce}}">
         {{{webviewScript}}}
     </script>
+    <!-- KaTeX JS -->
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/katex.min.js" integrity="sha384-31gKk4u8f5v/7jU4v6m5U4v6m5U4v6m5U4v6m5U4v6m5U4v6m5U4v6m5U4v6m5U4v6m5U4v6" crossorigin="anonymous"></script>
 </body>
 </html>
