@@ -22,10 +22,10 @@ async function showEnhancedThemePicker(provider: MarkdownPreviewProvider): Promi
     theme,
   }))
 
-  const currentThemeValue = currentTheme.value || 'github-light'
+  const currentThemeValue = (currentTheme.value as unknown as string) || 'github-light'
 
   // 找到当前主题的索引
-  const currentIndex = themes.findIndex(t => t.theme === currentThemeValue)
+  const currentIndex = themes.findIndex(t => t.theme === (currentThemeValue as unknown as string))
   if (currentIndex !== -1) {
     themes[currentIndex].picked = true
   }
@@ -97,7 +97,7 @@ async function showEnhancedThemePicker(provider: MarkdownPreviewProvider): Promi
     const selectedItem = quickPick.selectedItems[0] || quickPick.activeItems[0]
     if (selectedItem) {
       // 使用响应式配置系统更新主题
-      await currentTheme.update(selectedItem.theme, vscode.ConfigurationTarget.Global)
+      await currentTheme.update(selectedItem.theme as any, vscode.ConfigurationTarget.Global)
       await provider.updateTheme(selectedItem.theme)
       window.showInformationMessage(`主题已更改为: ${selectedItem.theme}`)
     }
@@ -153,59 +153,6 @@ const { activate, deactivate } = defineExtension((ctx) => {
     }
   })
 
-  // 添加防抖机制，避免配置变化监听器重复触发
-  let configChangeTimeout: NodeJS.Timeout | undefined
-  let lastProcessedTheme = ''
-
-  // 监听配置变化，自动更新主题和字体设置
-  ctx.subscriptions.push(
-    workspace.onDidChangeConfiguration(async (e) => {
-      if (e.affectsConfiguration('markdownPreview.currentTheme')) {
-        // 清除之前的超时，实现防抖
-        if (configChangeTimeout) {
-          clearTimeout(configChangeTimeout)
-        }
-
-        // 添加延迟确保配置已完全更新
-        configChangeTimeout = setTimeout(async () => {
-          // 使用改进的配置获取策略
-          const newTheme = getCurrentTheme()
-          const reactiveTheme = currentTheme.value
-
-          // 避免重复处理相同的主题
-          if (newTheme === lastProcessedTheme) {
-            return
-          }
-
-          lastProcessedTheme = newTheme
-
-          // 使用 reactive-vscode 的值，因为它可能更准确
-          const themeToUse = reactiveTheme || newTheme
-
-          logger.info(`[Config Change] 配置变化，更新主题为: ${themeToUse}`)
-
-          // 无论预览窗口是否存在都更新主题，确保配置同步
-          await provider.updateTheme(themeToUse).catch((error) => {
-            logger.error(`[Config Change] Failed to update theme:`, error)
-          })
-        }, 200) // 增加延迟到200ms，确保配置更新完成
-      }
-
-      // 监听字体大小、行高等配置变化
-      if (e.affectsConfiguration('markdownPreview.fontSize')
-        || e.affectsConfiguration('markdownPreview.lineHeight')
-        || e.affectsConfiguration('markdownPreview.fontFamily')) {
-        // 如果有活动的预览窗口，重新渲染内容
-        if (provider.hasActivePanel()) {
-          const document = provider.getCurrentDocument()
-          if (document) {
-            provider.updateContent(document)
-          }
-        }
-      }
-    }),
-
-  )
 
   // 监听活动编辑器变化，自动更新预览内容和滚动同步（带防抖）
   ctx.subscriptions.push(

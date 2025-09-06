@@ -3,11 +3,11 @@
  * 负责生成Markdown预览的HTML模板
  */
 
-import * as fs from 'node:fs'
 import * as path from 'node:path'
 import Handlebars from 'handlebars'
 import { generateEnhancedColors } from './color-hander'
 import { isDarkColor } from './color-utils'
+import { fileCacheService } from './file-cache-service'
 
 export interface HtmlTemplateOptions {
   /** 页面内容 */
@@ -27,15 +27,10 @@ export interface HtmlTemplateOptions {
  */
 export type ThemeStylesConfig = string
 
-// 预先读取静态CSS文件内容
-const baseStylesPath = path.join(__dirname, 'webview', 'styles.css')
-let baseStylesContent: string | null = null
-
+// 获取基础样式，使用缓存服务
 function getBaseStyles(): string {
-  if (!baseStylesContent) {
-    baseStylesContent = fs.readFileSync(baseStylesPath, 'utf8')
-  }
-  return baseStylesContent
+  const baseStylesPath = path.join(__dirname, 'webview', 'styles.css')
+  return fileCacheService.getFileContent(baseStylesPath)
 }
 
 /**
@@ -107,26 +102,36 @@ export function generateThemeStyles(
   return completeStyles
 }
 
-// 预先读取和编译模板，避免每次调用都重复IO和编译
+// 预先读取和编译模板，使用缓存服务
 const templatePath = path.join(__dirname, 'webview', 'template.hbs')
-const templateSource = fs.readFileSync(templatePath, 'utf8')
-const compiledTemplate = Handlebars.compile(templateSource)
+let compiledTemplate: HandlebarsTemplateDelegate<any> | null = null
 
-// 预先读取webview脚本内容
-
-function getWebviewScript(_context?: any): string {
-  let webviewScriptContent: string | null = null
-  if (!webviewScriptContent) {
-    const scriptPath = path.join(__dirname, './webview', 'webview.js')
-
+function getCompiledTemplate(): HandlebarsTemplateDelegate<any> {
+  if (!compiledTemplate) {
     try {
-      webviewScriptContent = fs.readFileSync(scriptPath, 'utf8')
+      const templateSource = fileCacheService.getFileContent(templatePath)
+      compiledTemplate = Handlebars.compile(templateSource)
     }
-    catch {
-      return `console.error('加载脚本失败！')`
+    catch (error) {
+      console.error('加载模板失败！', error)
+      // 返回一个简单的模板作为后备
+      compiledTemplate = Handlebars.compile('<html><body>{{content}}</body></html>')
     }
   }
-  return webviewScriptContent as string
+  return compiledTemplate
+}
+
+// 获取webview脚本内容，使用缓存服务
+function getWebviewScript(_context?: any): string {
+  const scriptPath = path.join(__dirname, './webview', 'webview.js')
+
+  try {
+    return fileCacheService.getFileContent(scriptPath)
+  }
+  catch (error) {
+    console.error('加载脚本失败！', error)
+    return `console.error('加载脚本失败！')`
+  }
 }
 
 /**
@@ -145,5 +150,5 @@ export function generateHtmlTemplate(options: HtmlTemplateOptions): string {
     webviewScript: getWebviewScript(),
   }
 
-  return compiledTemplate(viewData)
+  return getCompiledTemplate()(viewData)
 }

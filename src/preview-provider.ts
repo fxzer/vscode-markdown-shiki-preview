@@ -1,52 +1,24 @@
-import type { Highlighter } from 'shiki'
-import * as matter from 'gray-matter'
-import { debounce } from 'lodash-es'
-import MarkdownIt from 'markdown-it'
-import { bundledLanguages, bundledThemes, createHighlighter } from 'shiki'
 import * as vscode from 'vscode'
-import { generateHtmlTemplate } from './html-template'
-import { ThemeRenderer } from './theme-renderer'
-import { getCurrentTheme, getDocumentWidth, getFontFamily, getFontSize, getLineHeight, getSyncScroll, logger } from './utils'
+import { configService } from './config-service'
+import { ContentManager } from './content-manager'
+import { ScrollSyncManager } from './scroll-sync-manager'
+import { ThemeManager } from './theme-manager'
+import { logger } from './utils'
 
 export class MarkdownPreviewProvider implements vscode.WebviewPanelSerializer {
   private _panel: vscode.WebviewPanel | undefined
-  private _md: MarkdownIt
-  private _highlighter: Highlighter | undefined
-  private _themeRenderer: ThemeRenderer
-  private _currentShikiTheme: string
-  private _themeChanged: boolean = false // 标记主题是否已更改，强制重新渲染
-
-  // 内容更新防抖相关
-  private lastUpdateDocumentUri: string | undefined // 记录最后更新的文档URI
-  private debouncedUpdateContent: ReturnType<typeof debounce>
-
-  // 滚动同步相关
-  private _currentDocument: vscode.TextDocument | undefined
-  private _scrollSyncDisposables: vscode.Disposable[] = []
-  private _scrollSource = 'none' // 'editor' | 'preview' | 'none'
-  private _scrollTimeout: NodeJS.Timeout | undefined
-  private _editorMap = new Map<string, vscode.TextEditor>() // URI到编辑器的映射
+  private _scrollSyncManager: ScrollSyncManager
+  private _themeManager: ThemeManager
+  private _contentManager: ContentManager
+  private _configurationChangeDisposable: vscode.Disposable | undefined
 
   constructor(private readonly _extensionUri: vscode.Uri) {
-    // 使用改进的配置获取策略，按VSCode优先级获取主题
-    // 如果都没有配置，默认使用 'vitesse-dark'
-    this._currentShikiTheme = getCurrentTheme()
+    // 初始化各个管理器
+    this._themeManager = new ThemeManager()
+    this._scrollSyncManager = new ScrollSyncManager()
+    this._contentManager = new ContentManager(this._themeManager)
 
-    logger.info(`MarkdownPreviewProvider 初始化，使用主题: ${this._currentShikiTheme}`)
-
-    // 初始化主题渲染器
-    this._themeRenderer = new ThemeRenderer()
-
-    this._md = new MarkdownIt({
-      html: true,
-      linkify: true,
-      typographer: true,
-    })
-
-    // 初始化 lodash 防抖函数 [[memory:7983867]]
-    this.debouncedUpdateContent = debounce(this.performContentUpdate.bind(this), 300)
-
-    this.initializeHighlighter()
+    logger.info(`MarkdownPreviewProvider 初始化完成`)
 
     // 监听配置变化，实时更新预览
     this.setupConfigurationChangeListeners()
@@ -66,66 +38,6 @@ export class MarkdownPreviewProvider implements vscode.WebviewPanelSerializer {
     }
   }
 
-  private async initializeHighlighter() {
-    try {
-      this._highlighter = await createHighlighter({
-        themes: Object.keys(bundledThemes),
-        langs: Object.keys(bundledLanguages),
-      })
-
-      // 设置主题渲染器的高亮器实例
-      this._themeRenderer.setHighlighter(this._highlighter)
-
-      // 不再硬编码主题，使用构造函数中从配置读取的主题
-      this.setupMarkdownRenderer()
-      logger.info('Shiki highlighter 初始化成功')
-    }
-    catch (error) {
-      logger.error('Shiki highlighter 初始化失败:', error)
-      vscode.window.showErrorMessage('Markdown 预览高亮器初始化失败，某些功能可能无法正常工作')
-
-      // 创建一个最小可用的高亮器作为后备
-      try {
-        this._highlighter = await createHighlighter({
-          themes: ['vitesse-dark'],
-          langs: ['text'],
-        })
-        this._themeRenderer.setHighlighter(this._highlighter)
-        this.setupMarkdownRenderer()
-        logger.info('使用最小配置重新初始化高亮器成功')
-      }
-      catch (fallbackError) {
-        logger.error('最小配置高亮器初始化也失败:', fallbackError)
-        this._highlighter = undefined
-      }
-    }
-  }
-
-  private setupMarkdownRenderer() {
-    if (!this._highlighter)
-      return
-
-    this._md.set({
-      highlight: (code, lang) => {
-        if (!this._highlighter)
-          return `<pre><code>${code}</code></pre>`
-
-        try {
-          return this._highlighter.codeToHtml(code, {
-            lang: lang || 'text',
-            theme: this._currentShikiTheme,
-          })
-        }
-        catch {
-          return this._highlighter.codeToHtml(code, {
-            lang: 'text',
-            theme: this._currentShikiTheme,
-          })
-        }
-      },
-    })
-  }
-
   async showPreview(document: vscode.TextDocument) {
     if (this._panel) {
       this._panel.reveal(vscode.ViewColumn.Two)
@@ -142,19 +54,14 @@ export class MarkdownPreviewProvider implements vscode.WebviewPanelSerializer {
         },
       )
 
-      // 应用当前配置的主题，使用改进的配置获取策略
-      const configTheme = getCurrentTheme()
-      if (configTheme !== this._currentShikiTheme) {
-        logger.info(`showPreview: 更新主题从 ${this._currentShikiTheme} 到 ${configTheme}`)
-        this._currentShikiTheme = configTheme
-        this.setupMarkdownRenderer()
-      }
+      // 设置面板到各个管理器
+      this._scrollSyncManager.setPanel(this._panel)
+      this._themeManager.setPanel(this._panel)
+      this._contentManager.setPanel(this._panel)
 
       this._panel.onDidDispose(() => {
         this._panel = undefined
       })
-
-      // webview选项已经在创建时设置，这里不需要重复设置
 
       this._panel.webview.onDidReceiveMessage(
         (message) => {
@@ -163,7 +70,7 @@ export class MarkdownPreviewProvider implements vscode.WebviewPanelSerializer {
               vscode.window.showErrorMessage(message.text)
               break
             case 'scroll':
-              this.handlePreviewScroll(message.scrollPercentage, message.source, message.timestamp)
+              this._scrollSyncManager.handlePreviewScroll(message.scrollPercentage, message.source, message.timestamp)
               break
           }
         },
@@ -188,13 +95,23 @@ export class MarkdownPreviewProvider implements vscode.WebviewPanelSerializer {
       })
     }
 
-    this.updateContent(document)
-    this.setupScrollSync(document)
+    // 设置当前文档到各个管理器
+    this._themeManager.setCurrentDocument(document)
+    this._contentManager.setCurrentDocument(document)
+
+    // 更新内容和设置滚动同步
+    await this._contentManager.updateContent(document)
+    this._scrollSyncManager.setupScrollSync(document)
     this.updatePanelTitle(document)
   }
 
   async deserializeWebviewPanel(webviewPanel: vscode.WebviewPanel, state: any) {
     this._panel = webviewPanel
+
+    // 设置面板到各个管理器
+    this._scrollSyncManager.setPanel(this._panel)
+    this._themeManager.setPanel(this._panel)
+    this._contentManager.setPanel(this._panel)
 
     webviewPanel.onDidDispose(() => {
       this._panel = undefined
@@ -208,7 +125,7 @@ export class MarkdownPreviewProvider implements vscode.WebviewPanelSerializer {
             vscode.window.showErrorMessage(message.text)
             break
           case 'scroll':
-            this.handlePreviewScroll(message.scrollPercentage, message.source, message.timestamp)
+            this._scrollSyncManager.handlePreviewScroll(message.scrollPercentage, message.source, message.timestamp)
             break
         }
       },
@@ -217,17 +134,7 @@ export class MarkdownPreviewProvider implements vscode.WebviewPanelSerializer {
     )
 
     // 确保高亮器已初始化
-    if (!this._highlighter) {
-      await this.initializeHighlighter()
-    }
-
-    // 应用当前配置的主题，使用改进的配置获取策略
-    const configTheme = getCurrentTheme()
-    if (configTheme !== this._currentShikiTheme) {
-      logger.info(`deserializeWebviewPanel: 更新主题从 ${this._currentShikiTheme} 到 ${configTheme}`)
-      this._currentShikiTheme = configTheme
-      this.setupMarkdownRenderer()
-    }
+    await this._themeManager.ensureHighlighterInitialized()
 
     // 尝试从多个来源恢复文档
     let documentToRestore: vscode.TextDocument | undefined
@@ -259,15 +166,19 @@ export class MarkdownPreviewProvider implements vscode.WebviewPanelSerializer {
         }
       }
       // 或者使用之前的文档
-      else if (this._currentDocument) {
-        documentToRestore = this._currentDocument
+      else if (this._scrollSyncManager.getCurrentDocument()) {
+        documentToRestore = this._scrollSyncManager.getCurrentDocument()
       }
     }
 
     // 如果找到了文档，更新内容和设置滚动同步
     if (documentToRestore) {
-      await this.updateContent(documentToRestore)
-      this.setupScrollSync(documentToRestore)
+      // 设置当前文档到各个管理器
+      this._themeManager.setCurrentDocument(documentToRestore)
+      this._contentManager.setCurrentDocument(documentToRestore)
+
+      await this._contentManager.updateContent(documentToRestore)
+      this._scrollSyncManager.setupScrollSync(documentToRestore)
       this.updatePanelTitle(documentToRestore)
     }
   }
@@ -276,464 +187,120 @@ export class MarkdownPreviewProvider implements vscode.WebviewPanelSerializer {
     return this._panel !== undefined && this._panel.visible
   }
 
-  async updateTheme(theme: string) {
-    try {
-      logger.info('[updateTheme] Received theme:', theme)
-      logger.info('[updateTheme] Current _currentShikiTheme:', this._currentShikiTheme)
-
-      // 验证主题名称是否有效
-      if (!theme || typeof theme !== 'string') {
-        throw new Error(`无效的主题名称: ${theme}`)
-      }
-
-      // 强制更新主题，无论是否发生变化
-      // 这确保了从设置更改主题时也能立即生效
-      this._currentShikiTheme = theme
-      this._themeChanged = true // 标记主题已更改，强制重新渲染
-
-      logger.info('[updateTheme] Updated _currentShikiTheme:', this._currentShikiTheme)
-      logger.info('[updateTheme] _themeChanged:', this._themeChanged)
-
-      if (this._highlighter) {
-        this.setupMarkdownRenderer()
-      }
-
-      // 如果预览窗口存在，立即更新预览内容
-      if (this._panel && this._currentDocument) {
-        logger.info('[updateTheme] Updating preview content...')
-        // 清除HTML缓存，强制重新渲染
-        this._panel.webview.html = ''
-        // 重置文档URI缓存，确保内容被重新渲染
-        this.lastUpdateDocumentUri = undefined
-        await this.updateContent(this._currentDocument)
-        logger.info('[updateTheme] Preview content updated')
-      }
-      // 如果预览窗口不存在，确保下次打开时使用新主题
-      // 主题已经保存在 _currentShikiTheme 中，下次 showPreview 时会自动应用
-    }
-    catch (error) {
-      logger.error('更新主题失败:', error)
-      vscode.window.showErrorMessage(`主题更新失败: ${error instanceof Error ? error.message : '未知错误'}`)
-
-      // 恢复到之前的主题
-      if (this._panel && this._currentDocument) {
-        try {
-          await this.updateContent(this._currentDocument)
-        }
-        catch (recoveryError) {
-          logger.error('恢复主题失败:', recoveryError)
-        }
-      }
-    }
-  }
-
   hasActivePanel(): boolean {
     return this._panel !== undefined
   }
 
   getCurrentDocument(): vscode.TextDocument | undefined {
-    return this._currentDocument
+    return this._contentManager.getCurrentDocument()
   }
 
   // 获取当前状态用于序列化
   getState(): any {
     return {
-      documentUri: this._currentDocument?.uri.toString(),
-      theme: this._currentShikiTheme,
+      documentUri: this._contentManager.getCurrentDocument()?.uri.toString(),
+      theme: this._themeManager.getCurrentTheme(),
     }
   }
 
   // 优雅地切换到新文档，确保内容更新和滚动同步都正确设置
   public switchToDocument(document: vscode.TextDocument) {
     // 检查是否是同一个文档，避免不必要的重复设置
-    if (this._currentDocument && this._currentDocument.uri.toString() === document.uri.toString()) {
+    const currentDoc = this._contentManager.getCurrentDocument()
+    if (currentDoc && currentDoc.uri.toString() === document.uri.toString()) {
       return
     }
 
     // 更新标签页标题
     this.updatePanelTitle(document)
 
+    // 设置当前文档到各个管理器
+    this._themeManager.setCurrentDocument(document)
+    this._contentManager.setCurrentDocument(document)
+
     // 更新内容（带防抖）
-    this.updateContentDebounced(document)
+    this._contentManager.updateContentDebounced(document)
 
     // 重新设置滚动同步，确保新文档的编辑器滚动能正确同步
-    this.setupScrollSync(document)
+    this._scrollSyncManager.setupScrollSync(document)
   }
 
   // 带防抖的内容更新方法
   updateContentDebounced(document: vscode.TextDocument) {
-    this.debouncedUpdateContent(document)
+    this._contentManager.updateContentDebounced(document)
   }
 
-  // 实际执行内容更新的方法（被防抖函数调用）
-  private async performContentUpdate(document: vscode.TextDocument) {
-    try {
-      const documentUri = document.uri.toString()
-
-      // 确保文档仍然是活动的
-      const activeEditor = vscode.window.activeTextEditor
-      if (activeEditor && activeEditor.document.uri.toString() === documentUri) {
-        await this.updateContent(document)
-        this.lastUpdateDocumentUri = documentUri
-      }
-    }
-    catch (error) {
-      logger.error('内容更新失败:', error)
-      vscode.window.showErrorMessage('Markdown 预览内容更新失败，请检查文件格式')
-    }
-  }
-
+  // 直接更新内容
   async updateContent(document: vscode.TextDocument) {
-    if (!this._panel) {
-      return
-    }
+    // 设置当前文档到各个管理器
+    this._themeManager.setCurrentDocument(document)
+    this._contentManager.setCurrentDocument(document)
 
-    if (!this._highlighter) {
-      try {
-        await this.initializeHighlighter()
-      }
-      catch (error) {
-        logger.error('高亮器初始化失败:', error)
-        vscode.window.showErrorMessage('无法初始化语法高亮器，预览功能可能受限')
-      }
-    }
-
-    // 确保 _currentDocument 被设置
-    this._currentDocument = document
-
-    // 更新标签页标题
+    await this._contentManager.updateContent(document)
     this.updatePanelTitle(document)
-
-    const rawContent = document.getText()
-    const documentUri = document.uri.toString()
-
-    // 使用 gray-matter 分离 front matter 和内容
-    const parsed = matter.default(rawContent)
-    const content = parsed.content // 只使用内容部分，忽略元数据
-
-    logger.info('[updateContent] _themeChanged:', this._themeChanged)
-    logger.info('[updateContent] _currentShikiTheme:', this._currentShikiTheme)
-    logger.info('[updateContent] lastUpdateDocumentUri:', this.lastUpdateDocumentUri)
-    logger.info('[updateContent] documentUri:', documentUri)
-    logger.info('[updateContent] Front matter data:', parsed.data)
-    logger.info('[updateContent] Content length:', content.length)
-
-    // 避免重复更新同一文档的相同内容
-    // 但是如果主题已更改，则强制重新渲染
-    if (!this._themeChanged && this.lastUpdateDocumentUri === documentUri && this._panel.webview.html.includes(content.substring(0, 100))) {
-      logger.info('[updateContent] Skipping update - no theme change and same content')
-      // 如果是同一个文档且内容没有显著变化，并且主题没有更改，跳过更新
-      return
-    }
-
-    // 使用当前设置的主题（可能是预览主题或配置主题）
-    let currentTheme = this._currentShikiTheme
-
-    // 验证主题是否有效，如果无效则使用配置获取策略
-    logger.info(`[updateContent] 验证主题: ${currentTheme}`)
-    logger.info(`[updateContent] 主题是否有效: ${this._themeRenderer.isValidTheme(currentTheme)}`)
-
-    if (!this._themeRenderer.isValidTheme(currentTheme)) {
-      logger.warn('[updateContent] 当前主题无效，尝试修复...')
-
-      // 使用改进的配置获取策略，传入文档URI以获取文件夹特定配置
-      currentTheme = getCurrentTheme(document.uri)
-      logger.info(`[updateContent] 从配置获取的备用主题: ${currentTheme}`)
-
-      if (!this._themeRenderer.isValidTheme(currentTheme)) {
-        logger.warn('[updateContent] 备用主题也无效，使用默认主题 vitesse-dark')
-        currentTheme = 'vitesse-dark'
-
-        // 同步修复配置 - 但避免循环触发
-        logger.info('[updateContent] 更新配置为 vitesse-dark')
-        try {
-          const config = vscode.workspace.getConfiguration('markdownPreview')
-          await config.update('currentTheme', currentTheme, vscode.ConfigurationTarget.Global)
-        }
-        catch (error) {
-          logger.error('[updateContent] 更新配置失败:', error)
-          vscode.window.showWarningMessage('无法自动修复主题配置，请手动检查设置')
-        }
-      }
-
-      this._currentShikiTheme = currentTheme
-      this.setupMarkdownRenderer()
-      logger.info(`[updateContent] 主题已修复为: ${currentTheme}`)
-    }
-
-    const html = this._md.render(content)
-
-    // 使用改进的配置获取策略获取所有配置，传入文档URI以支持文件夹特定配置
-    const fontSize = getFontSize(document.uri)
-    const lineHeight = getLineHeight(document.uri)
-    const fontFamily = getFontFamily(document.uri)
-    const documentWidth = getDocumentWidth(document.uri)
-
-    logger.info('[updateContent] Generating HTML with theme:', currentTheme)
-    try {
-      this._panel.webview.html = this.getHtmlForWebview(html, {
-        theme: currentTheme,
-        fontSize,
-        lineHeight,
-        fontFamily,
-        documentWidth,
-      })
-    }
-    catch (error) {
-      logger.error('生成 HTML 预览失败:', error)
-      vscode.window.showErrorMessage('生成预览内容失败，请检查主题配置')
-
-      // 尝试使用默认主题重新生成
-      try {
-        logger.info('尝试使用默认主题重新生成预览')
-        this._panel.webview.html = this.getHtmlForWebview(html, {
-          theme: 'vitesse-dark',
-          fontSize,
-          lineHeight,
-          fontFamily,
-          documentWidth,
-        })
-      }
-      catch (fallbackError) {
-        logger.error('默认主题也失败:', fallbackError)
-        this._panel.webview.html = `<html><body><h2>预览生成失败</h2><p>错误: ${error instanceof Error ? error.message : '未知错误'}</p></body></html>`
-      }
-    }
-
-    // 重置主题更改标志，表示已经完成渲染
-    this._themeChanged = false
-    logger.info('[updateContent] HTML updated and _themeChanged reset to false')
   }
 
-  private getHtmlForWebview(content: string, config: {
-    theme: string
-    fontSize: number
-    lineHeight: number
-    fontFamily: string
-    documentWidth: string
-  }): string {
-    const nonce = this.getNonce()
-    const themeStyles = this._themeRenderer.getThemeCSS(config.theme, {
-      fontSize: config.fontSize,
-      lineHeight: config.lineHeight,
-      fontFamily: config.fontFamily,
-      documentWidth: config.documentWidth,
-    })
-
-    return generateHtmlTemplate({
-      content,
-      themeStyles,
-      nonce,
-      extensionUri: this._extensionUri.toString(),
-      documentWidth: config.documentWidth,
-    })
-  }
-
-  /**
-   * 生成一个随机的 nonce 字符串
-   * 用于 Content Security Policy (CSP) 中的脚本安全验证
-   * 生成一个32位长的随机字符串,包含大小写字母和数字
-   * @returns 32位随机字符串
-   */
-  private getNonce(): string {
-    const possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
-    const possibleLength = possible.length
-
-    return Array.from({ length: 32 }, () =>
-      possible.charAt(Math.floor(Math.random() * possibleLength))).join('')
-  }
-
-  public setupScrollSync(document: vscode.TextDocument) {
-    // 清理之前的滚动同步监听器
-    this.disposeScrollSync()
-
-    this._currentDocument = document
-
-    // 检查是否启用滚动同步，使用改进的配置获取策略
-    const syncScrollEnabled = getSyncScroll(document.uri)
-    if (!syncScrollEnabled) {
-      logger.info('滚动同步已禁用')
-      return
-    }
-
-    // 防抖处理编辑器滚动事件
-    const scrollDisposable = vscode.window.onDidChangeTextEditorVisibleRanges((event) => {
-      if (event.textEditor.document === document && this._panel && this._scrollSource !== 'preview') {
-        this.syncEditorScrollToPreview(event.textEditor)
-      }
-    })
-    this._scrollSyncDisposables.push(scrollDisposable)
-
-    // 监听编辑器变化
-    const editorChangeDisposable = vscode.window.onDidChangeVisibleTextEditors((editors) => {
-      const documentUri = document.uri.toString()
-      for (const editor of editors) {
-        if (editor.document.uri.toString() === documentUri && this._panel) {
-          this.syncEditorScrollToPreview(editor)
-          break
-        }
-      }
-    })
-    this._scrollSyncDisposables.push(editorChangeDisposable)
-
-    // 监听活动编辑器变化
-    const activeEditorChangeDisposable = vscode.window.onDidChangeActiveTextEditor((editor) => {
-      if (editor && editor.document === document && this._panel) {
-        this.syncEditorScrollToPreview(editor)
-      }
-    })
-    this._scrollSyncDisposables.push(activeEditorChangeDisposable)
-  }
-
-  private syncEditorScrollToPreview(editor: vscode.TextEditor) {
-    if (!this._panel || !this._currentDocument || this._scrollSource === 'preview') {
-      return
-    }
-
-    // 使用改进的配置获取策略
-    const syncScrollEnabled = getSyncScroll(this._currentDocument.uri)
-    if (!syncScrollEnabled)
-      return
-
-    const visibleRange = editor.visibleRanges[0]
-    if (!visibleRange)
-      return
-
-    const totalLines = editor.document.lineCount
-    if (totalLines === 0)
-      return
-
-    // 使用可见区域中间位置计算滚动比例
-    const middleLine = Math.floor((visibleRange.start.line + visibleRange.end.line) / 2)
-    const scrollRatio = Math.max(0, Math.min(1, middleLine / Math.max(1, totalLines - 1)))
-
-    // 设置滚动源并发送消息
-    this._scrollSource = 'editor'
-    this._panel.webview.postMessage({
-      command: 'scrollToPercentage',
-      percentage: scrollRatio,
-      source: 'editor',
-    })
-
-    // 延迟重置滚动源，避免死循环，与预览区保持一致的延迟时间
-    if (this._scrollTimeout) {
-      clearTimeout(this._scrollTimeout)
-    }
-    this._scrollTimeout = setTimeout(() => {
-      this._scrollSource = 'none'
-    }, 150)
-  }
-
-  private handlePreviewScroll(scrollPercentage: number, source?: string, _timestamp?: number) {
-    if (!this._currentDocument || source === 'editor' || this._scrollSource === 'editor') {
-      return
-    }
-
-    // 使用改进的配置获取策略
-    const syncScrollEnabled = getSyncScroll(this._currentDocument.uri)
-    if (!syncScrollEnabled)
-      return
-
-    // 使用文档URI查找对应的编辑器
-    const documentUri = this._currentDocument.uri.toString()
-    let targetEditor: vscode.TextEditor | undefined
-
-    // 优先使用活动编辑器
-    const activeEditor = vscode.window.activeTextEditor
-    if (activeEditor && activeEditor.document.uri.toString() === documentUri) {
-      targetEditor = activeEditor
-    }
-    else {
-      // 查找所有可见的编辑器
-      for (const editor of vscode.window.visibleTextEditors) {
-        if (editor.document.uri.toString() === documentUri) {
-          targetEditor = editor
-          break
-        }
-      }
-    }
-
-    if (!targetEditor)
-      return
-
-    try {
-      const totalLines = this._currentDocument.lineCount
-      if (totalLines === 0)
-        return
-
-      const targetLine = Math.min(
-        Math.floor(scrollPercentage * Math.max(0, totalLines - 1)),
-        totalLines - 1,
-      )
-      const range = new vscode.Range(targetLine, 0, targetLine, 0)
-
-      // 设置滚动源并即时滚动编辑器
-      this._scrollSource = 'preview'
-      targetEditor.revealRange(range, vscode.TextEditorRevealType.InCenterIfOutsideViewport)
-
-      // 延迟重置滚动源，与编辑器端保持一致，避免循环滚动
-      if (this._scrollTimeout) {
-        clearTimeout(this._scrollTimeout)
-      }
-      this._scrollTimeout = setTimeout(() => {
-        this._scrollSource = 'none'
-      }, 150)
-    }
-    catch (error) {
-      console.error('Error syncing preview scroll to editor:', error)
-    }
-  }
-
-  private disposeScrollSync() {
-    // 清理滚动同步相关的监听器
-    this._scrollSyncDisposables.forEach(disposable => disposable.dispose())
-    this._scrollSyncDisposables = []
-
-    // 清理滚动超时
-    if (this._scrollTimeout) {
-      clearTimeout(this._scrollTimeout)
-      this._scrollTimeout = undefined
-    }
+  // 更新主题
+  async updateTheme(theme: string) {
+    await this._themeManager.updateTheme(theme)
   }
 
   /**
    * 设置配置变化监听器，当配置改变时自动更新预览
    */
-  private _configurationChangeDisposable: vscode.Disposable | undefined
-
   private setupConfigurationChangeListeners() {
-    // 清理之前的监听器（如果存在）
-    if (this._configurationChangeDisposable) {
-      this._configurationChangeDisposable.dispose()
-    }
+    const disposables: vscode.Disposable[] = []
 
-    this._configurationChangeDisposable = vscode.workspace.onDidChangeConfiguration((event) => {
-      const configKeys = [
-        'markdownPreview.documentWidth',
-        'markdownPreview.fontSize',
-        'markdownPreview.lineHeight',
-        'markdownPreview.fontFamily',
-        'markdownPreview.syncScroll',
-      ]
+    // 监听主题变化
+    disposables.push(
+      configService.onConfigChange<string>('currentTheme', (theme) => {
+        if (this._panel) {
+          logger.info('主题配置发生变化，立即更新主题')
+          this._themeManager.updateTheme(theme)
+        }
+      }),
+    )
 
-      const hasRelevantChange = configKeys.some(key => event.affectsConfiguration(key))
+    // 监听非主题配置的变化
+    const nonThemeKeys: (keyof ReturnType<typeof configService.getAllConfigs>)[] = [
+      'documentWidth',
+      'fontSize',
+      'lineHeight',
+      'fontFamily',
+    ]
 
-      if (hasRelevantChange && this._panel && this._currentDocument) {
-        logger.info('配置发生变化，自动更新预览内容')
-        // 强制重新渲染，清除缓存
-        this.lastUpdateDocumentUri = undefined
-        this._themeChanged = true
-        this.updateContent(this._currentDocument)
-      }
+    nonThemeKeys.forEach((key) => {
+      disposables.push(
+        configService.onConfigChange(key, () => {
+          if (this._panel && this._contentManager.getCurrentDocument()) {
+            logger.info(`配置 ${key} 发生变化，强制更新预览内容`)
+            // 直接更新内容
+            this.updateContent(this._contentManager.getCurrentDocument()!)
+          }
+        }),
+      )
     })
+
+    // 监听滚动同步配置的变化
+    disposables.push(
+      configService.onConfigChange<boolean>('syncScroll', (enabled) => {
+        if (enabled) {
+          this._scrollSyncManager.enableScrollSync()
+        }
+        else {
+          this._scrollSyncManager.disableScrollSync()
+        }
+      }),
+    )
+
+    this._configurationChangeDisposable = vscode.Disposable.from(...disposables)
   }
 
   dispose() {
-    // 取消所有防抖函数的待执行操作
-    this.debouncedUpdateContent.cancel()
-
-    // 清理滚动同步
-    this.disposeScrollSync()
+    // 清理各个管理器
+    this._scrollSyncManager.dispose()
+    this._themeManager.dispose()
+    this._contentManager.dispose()
 
     // 清理配置变化监听器
     if (this._configurationChangeDisposable) {
@@ -746,18 +313,6 @@ export class MarkdownPreviewProvider implements vscode.WebviewPanelSerializer {
       this._panel.dispose()
       this._panel = undefined
     }
-
-    // 清理高亮器
-    this._highlighter = undefined
-
-    // 清理当前文档引用
-    this._currentDocument = undefined
-
-    // 清理编辑器映射
-    this._editorMap.clear()
-
-    // 清理最后的更新文档URI
-    this.lastUpdateDocumentUri = undefined
 
     logger.info('MarkdownPreviewProvider 已完全清理')
   }

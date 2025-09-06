@@ -1,0 +1,239 @@
+import * as matter from 'gray-matter'
+import { debounce } from 'lodash-es'
+import * as vscode from 'vscode'
+import { configService } from './config-service'
+import { generateHtmlTemplate } from './html-template'
+import { logger } from './utils'
+
+/**
+ * 内容管理器
+ * 负责管理Markdown内容的渲染和更新
+ */
+export class ContentManager {
+  private _panel: vscode.WebviewPanel | undefined
+  private _currentDocument: vscode.TextDocument | undefined
+  private _themeManager: any // 将在构造函数中设置类型
+  private lastUpdateDocumentUri: string | undefined // 记录最后更新的文档URI
+  private lastUpdateConfig: string = '' // 记录最后更新的配置
+  private debouncedUpdateContent: ReturnType<typeof debounce>
+
+  constructor(themeManager: any) {
+    this._themeManager = themeManager
+
+    // 初始化 lodash 防抖函数
+    this.debouncedUpdateContent = debounce(this.performContentUpdate.bind(this), 300)
+  }
+
+  /**
+   * 设置当前面板
+   */
+  public setPanel(panel: vscode.WebviewPanel | undefined): void {
+    this._panel = panel
+  }
+
+  /**
+   * 设置当前文档
+   */
+  public setCurrentDocument(document: vscode.TextDocument | undefined): void {
+    this._currentDocument = document
+  }
+
+  /**
+   * 更新内容（带防抖）
+   */
+  public updateContentDebounced(document: vscode.TextDocument): void {
+    this.debouncedUpdateContent(document)
+  }
+
+  /**
+   * 直接更新内容
+   */
+  public async updateContent(document: vscode.TextDocument): Promise<void> {
+    if (!this._panel) {
+      return
+    }
+
+    // 确保高亮器已初始化
+    await this._themeManager.ensureHighlighterInitialized()
+
+    // 设置当前文档
+    this._currentDocument = document
+
+    const rawContent = document.getText()
+    const documentUri = document.uri.toString()
+
+    // 使用 gray-matter 分离 front matter 和内容
+    const parsed = matter.default(rawContent)
+    const content = parsed.content // 只使用内容部分，忽略元数据
+
+    // 获取当前配置的字符串表示，用于比较配置是否变化
+    const currentConfig = JSON.stringify({
+      theme: this._themeManager.getCurrentTheme(),
+      fontSize: configService.getFontSize(document.uri),
+      lineHeight: configService.getLineHeight(document.uri),
+      fontFamily: configService.getFontFamily(document.uri),
+      documentWidth: configService.getDocumentWidth(document.uri),
+    })
+
+    logger.info('[updateContent] _themeChanged:', this._themeManager.hasThemeChanged())
+    logger.info('[updateContent] _currentShikiTheme:', this._themeManager.getCurrentTheme())
+    logger.info('[updateContent] lastUpdateDocumentUri:', this.lastUpdateDocumentUri)
+    logger.info('[updateContent] documentUri:', documentUri)
+    logger.info('[updateContent] lastUpdateConfig:', this.lastUpdateConfig)
+    logger.info('[updateContent] currentConfig:', currentConfig)
+    logger.info('[updateContent] Front matter data:', parsed.data)
+    logger.info('[updateContent] Content length:', content.length)
+
+    // 避免不必要的重复渲染
+    if (this.lastUpdateDocumentUri === documentUri && this.lastUpdateConfig === currentConfig) {
+      logger.info('[updateContent] Skipping update - same document and config')
+      return
+    }
+
+    // 验证并修复当前主题
+    const currentTheme = this._themeManager.validateAndFixTheme()
+
+    // 获取Markdown渲染器
+    const md = this._themeManager.getMarkdownRenderer()
+    const html = md.render(content)
+
+    // 使用配置服务获取所有配置
+    const fontSize = configService.getFontSize(document.uri)
+    const lineHeight = configService.getLineHeight(document.uri)
+    const fontFamily = configService.getFontFamily(document.uri)
+    const documentWidth = configService.getDocumentWidth(document.uri)
+
+    logger.info('[updateContent] Generating HTML with theme:', currentTheme)
+
+    try {
+      this._panel.webview.html = this.getHtmlForWebview(html, {
+        theme: currentTheme,
+        fontSize,
+        lineHeight,
+        fontFamily,
+        documentWidth,
+      })
+    }
+    catch (error) {
+      logger.error('生成 HTML 预览失败:', error)
+      vscode.window.showErrorMessage('生成预览内容失败，请检查主题配置')
+
+      // 尝试使用默认主题重新生成
+      try {
+        logger.info('尝试使用默认主题重新生成预览')
+        this._panel.webview.html = this.getHtmlForWebview(html, {
+          theme: 'vitesse-dark',
+          fontSize,
+          lineHeight,
+          fontFamily,
+          documentWidth,
+        })
+      }
+      catch (fallbackError) {
+        logger.error('默认主题也失败:', fallbackError)
+        this._panel.webview.html = `<html><body><h2>预览生成失败</h2><p>错误: ${error instanceof Error ? error.message : '未知错误'}</p></body></html>`
+      }
+    }
+
+    // 重置主题更改标志，表示已经完成渲染
+    this._themeManager.resetThemeChanged()
+    this.lastUpdateDocumentUri = documentUri
+    this.lastUpdateConfig = currentConfig
+    logger.info('[updateContent] HTML updated and _themeChanged reset to false')
+  }
+
+  /**
+   * 实际执行内容更新的方法（被防抖函数调用）
+   */
+  private async performContentUpdate(document: vscode.TextDocument): Promise<void> {
+    try {
+      const documentUri = document.uri.toString()
+
+      // 确保文档仍然是活动的
+      const activeEditor = vscode.window.activeTextEditor
+      if (activeEditor && activeEditor.document.uri.toString() === documentUri) {
+        await this.updateContent(document)
+        this.lastUpdateDocumentUri = documentUri
+      }
+    }
+    catch (error) {
+      logger.error('内容更新失败:', error)
+      vscode.window.showErrorMessage('Markdown 预览内容更新失败，请检查文件格式')
+    }
+  }
+
+  /**
+   * 生成WebView HTML
+   */
+  private getHtmlForWebview(content: string, config: {
+    theme: string
+    fontSize: number
+    lineHeight: number
+    fontFamily: string
+    documentWidth: string
+  }): string {
+    const nonce = this.getNonce()
+    const themeRenderer = this._themeManager.getThemeRenderer()
+    const themeStyles = themeRenderer.getThemeCSS(config.theme, {
+      fontSize: config.fontSize,
+      lineHeight: config.lineHeight,
+      fontFamily: config.fontFamily,
+      documentWidth: config.documentWidth,
+    })
+
+    return generateHtmlTemplate({
+      content,
+      themeStyles,
+      nonce,
+      extensionUri: '', // 将在主类中设置
+      documentWidth: config.documentWidth,
+    })
+  }
+
+  /**
+   * 生成一个随机的 nonce 字符串
+   * 用于 Content Security Policy (CSP) 中的脚本安全验证
+   */
+  private getNonce(): string {
+    const possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
+    const possibleLength = possible.length
+
+    return Array.from({ length: 32 }, () =>
+      possible.charAt(Math.floor(Math.random() * possibleLength))).join('')
+  }
+
+  /**
+   * 获取当前文档
+   */
+  public getCurrentDocument(): vscode.TextDocument | undefined {
+    return this._currentDocument
+  }
+
+  /**
+   * 获取最后更新的文档URI
+   */
+  public getLastUpdateDocumentUri(): string | undefined {
+    return this.lastUpdateDocumentUri
+  }
+
+  /**
+   * 清除最后更新的文档URI
+   */
+  public clearLastUpdateDocumentUri(): void {
+    this.lastUpdateDocumentUri = undefined
+    this.lastUpdateConfig = ''
+  }
+
+  /**
+   * 完全销毁管理器
+   */
+  public dispose(): void {
+    // 取消所有防抖函数的待执行操作
+    this.debouncedUpdateContent.cancel()
+
+    this._currentDocument = undefined
+    this._panel = undefined
+    this.lastUpdateDocumentUri = undefined
+    this.lastUpdateConfig = ''
+  }
+}
