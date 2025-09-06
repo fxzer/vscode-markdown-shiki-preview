@@ -22,7 +22,7 @@ async function showEnhancedThemePicker(provider: MarkdownPreviewProvider): Promi
     theme,
   }))
 
-  const currentThemeValue = (currentTheme as any).value || 'github-light'
+  const currentThemeValue = currentTheme.value || 'github-light'
 
   // 找到当前主题的索引
   const currentIndex = themes.findIndex(t => t.theme === currentThemeValue)
@@ -97,7 +97,7 @@ async function showEnhancedThemePicker(provider: MarkdownPreviewProvider): Promi
     const selectedItem = quickPick.selectedItems[0] || quickPick.activeItems[0]
     if (selectedItem) {
       // 使用响应式配置系统更新主题
-      await (currentTheme as any).update(selectedItem.theme, vscode.ConfigurationTarget.Global)
+      await currentTheme.update(selectedItem.theme, vscode.ConfigurationTarget.Global)
       await provider.updateTheme(selectedItem.theme)
       window.showInformationMessage(`主题已更改为: ${selectedItem.theme}`)
     }
@@ -180,7 +180,7 @@ const { activate, deactivate } = defineExtension((ctx) => {
           lastProcessedTheme = newTheme
 
           // 使用 reactive-vscode 的值，因为它可能更准确
-          const themeToUse = (reactiveTheme as any) || newTheme
+          const themeToUse = reactiveTheme || newTheme
 
           logger.info(`[Config Change] 配置变化，更新主题为: ${themeToUse}`)
 

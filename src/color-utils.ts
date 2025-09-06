@@ -33,6 +33,7 @@ export function getContrastRatio(color1: string | chroma.Color, color2: string |
     return (lighter + 0.05) / (darker + 0.05)
   }
   catch {
+    console.error('色值格式错误')
     return 1
   }
 }

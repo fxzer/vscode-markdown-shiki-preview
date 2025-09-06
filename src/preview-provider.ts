@@ -78,9 +78,26 @@ export class MarkdownPreviewProvider implements vscode.WebviewPanelSerializer {
 
       // 不再硬编码主题，使用构造函数中从配置读取的主题
       this.setupMarkdownRenderer()
+      logger.info('Shiki highlighter 初始化成功')
     }
     catch (error) {
-      console.error('Failed to initialize Shiki highlighter:', error)
+      logger.error('Shiki highlighter 初始化失败:', error)
+      vscode.window.showErrorMessage('Markdown 预览高亮器初始化失败，某些功能可能无法正常工作')
+
+      // 创建一个最小可用的高亮器作为后备
+      try {
+        this._highlighter = await createHighlighter({
+          themes: ['vitesse-dark'],
+          langs: ['text'],
+        })
+        this._themeRenderer.setHighlighter(this._highlighter)
+        this.setupMarkdownRenderer()
+        logger.info('使用最小配置重新初始化高亮器成功')
+      }
+      catch (fallbackError) {
+        logger.error('最小配置高亮器初始化也失败:', fallbackError)
+        this._highlighter = undefined
+      }
     }
   }
 
@@ -260,33 +277,54 @@ export class MarkdownPreviewProvider implements vscode.WebviewPanelSerializer {
   }
 
   async updateTheme(theme: string) {
-    logger.info('[updateTheme] Received theme:', theme)
-    logger.info('[updateTheme] Current _currentShikiTheme:', this._currentShikiTheme)
+    try {
+      logger.info('[updateTheme] Received theme:', theme)
+      logger.info('[updateTheme] Current _currentShikiTheme:', this._currentShikiTheme)
 
-    // 强制更新主题，无论是否发生变化
-    // 这确保了从设置更改主题时也能立即生效
-    this._currentShikiTheme = theme
-    this._themeChanged = true // 标记主题已更改，强制重新渲染
+      // 验证主题名称是否有效
+      if (!theme || typeof theme !== 'string') {
+        throw new Error(`无效的主题名称: ${theme}`)
+      }
 
-    logger.info('[updateTheme] Updated _currentShikiTheme:', this._currentShikiTheme)
-    logger.info('[updateTheme] _themeChanged:', this._themeChanged)
+      // 强制更新主题，无论是否发生变化
+      // 这确保了从设置更改主题时也能立即生效
+      this._currentShikiTheme = theme
+      this._themeChanged = true // 标记主题已更改，强制重新渲染
 
-    if (this._highlighter) {
-      this.setupMarkdownRenderer()
+      logger.info('[updateTheme] Updated _currentShikiTheme:', this._currentShikiTheme)
+      logger.info('[updateTheme] _themeChanged:', this._themeChanged)
+
+      if (this._highlighter) {
+        this.setupMarkdownRenderer()
+      }
+
+      // 如果预览窗口存在，立即更新预览内容
+      if (this._panel && this._currentDocument) {
+        logger.info('[updateTheme] Updating preview content...')
+        // 清除HTML缓存，强制重新渲染
+        this._panel.webview.html = ''
+        // 重置文档URI缓存，确保内容被重新渲染
+        this.lastUpdateDocumentUri = undefined
+        await this.updateContent(this._currentDocument)
+        logger.info('[updateTheme] Preview content updated')
+      }
+      // 如果预览窗口不存在，确保下次打开时使用新主题
+      // 主题已经保存在 _currentShikiTheme 中，下次 showPreview 时会自动应用
     }
+    catch (error) {
+      logger.error('更新主题失败:', error)
+      vscode.window.showErrorMessage(`主题更新失败: ${error instanceof Error ? error.message : '未知错误'}`)
 
-    // 如果预览窗口存在，立即更新预览内容
-    if (this._panel && this._currentDocument) {
-      logger.info('[updateTheme] Updating preview content...')
-      // 清除HTML缓存，强制重新渲染
-      this._panel.webview.html = ''
-      // 重置文档URI缓存，确保内容被重新渲染
-      this.lastUpdateDocumentUri = undefined
-      await this.updateContent(this._currentDocument)
-      logger.info('[updateTheme] Preview content updated')
+      // 恢复到之前的主题
+      if (this._panel && this._currentDocument) {
+        try {
+          await this.updateContent(this._currentDocument)
+        }
+        catch (recoveryError) {
+          logger.error('恢复主题失败:', recoveryError)
+        }
+      }
     }
-    // 如果预览窗口不存在，确保下次打开时使用新主题
-    // 主题已经保存在 _currentShikiTheme 中，下次 showPreview 时会自动应用
   }
 
   hasActivePanel(): boolean {
@@ -340,7 +378,8 @@ export class MarkdownPreviewProvider implements vscode.WebviewPanelSerializer {
       }
     }
     catch (error) {
-      console.error('Error updating content:', error)
+      logger.error('内容更新失败:', error)
+      vscode.window.showErrorMessage('Markdown 预览内容更新失败，请检查文件格式')
     }
   }
 
@@ -350,7 +389,13 @@ export class MarkdownPreviewProvider implements vscode.WebviewPanelSerializer {
     }
 
     if (!this._highlighter) {
-      await this.initializeHighlighter()
+      try {
+        await this.initializeHighlighter()
+      }
+      catch (error) {
+        logger.error('高亮器初始化失败:', error)
+        vscode.window.showErrorMessage('无法初始化语法高亮器，预览功能可能受限')
+      }
     }
 
     // 确保 _currentDocument 被设置
@@ -407,6 +452,7 @@ export class MarkdownPreviewProvider implements vscode.WebviewPanelSerializer {
         }
         catch (error) {
           logger.error('[updateContent] 更新配置失败:', error)
+          vscode.window.showWarningMessage('无法自动修复主题配置，请手动检查设置')
         }
       }
 
@@ -424,13 +470,35 @@ export class MarkdownPreviewProvider implements vscode.WebviewPanelSerializer {
     const documentWidth = getDocumentWidth(document.uri)
 
     logger.info('[updateContent] Generating HTML with theme:', currentTheme)
-    this._panel.webview.html = this.getHtmlForWebview(html, {
-      theme: currentTheme,
-      fontSize,
-      lineHeight,
-      fontFamily,
-      documentWidth,
-    })
+    try {
+      this._panel.webview.html = this.getHtmlForWebview(html, {
+        theme: currentTheme,
+        fontSize,
+        lineHeight,
+        fontFamily,
+        documentWidth,
+      })
+    }
+    catch (error) {
+      logger.error('生成 HTML 预览失败:', error)
+      vscode.window.showErrorMessage('生成预览内容失败，请检查主题配置')
+
+      // 尝试使用默认主题重新生成
+      try {
+        logger.info('尝试使用默认主题重新生成预览')
+        this._panel.webview.html = this.getHtmlForWebview(html, {
+          theme: 'vitesse-dark',
+          fontSize,
+          lineHeight,
+          fontFamily,
+          documentWidth,
+        })
+      }
+      catch (fallbackError) {
+        logger.error('默认主题也失败:', fallbackError)
+        this._panel.webview.html = `<html><body><h2>预览生成失败</h2><p>错误: ${error instanceof Error ? error.message : '未知错误'}</p></body></html>`
+      }
+    }
 
     // 重置主题更改标志，表示已经完成渲染
     this._themeChanged = false
@@ -507,6 +575,14 @@ export class MarkdownPreviewProvider implements vscode.WebviewPanelSerializer {
       }
     })
     this._scrollSyncDisposables.push(editorChangeDisposable)
+
+    // 监听活动编辑器变化
+    const activeEditorChangeDisposable = vscode.window.onDidChangeActiveTextEditor((editor) => {
+      if (editor && editor.document === document && this._panel) {
+        this.syncEditorScrollToPreview(editor)
+      }
+    })
+    this._scrollSyncDisposables.push(activeEditorChangeDisposable)
   }
 
   private syncEditorScrollToPreview(editor: vscode.TextEditor) {
@@ -623,8 +699,15 @@ export class MarkdownPreviewProvider implements vscode.WebviewPanelSerializer {
   /**
    * 设置配置变化监听器，当配置改变时自动更新预览
    */
+  private _configurationChangeDisposable: vscode.Disposable | undefined
+
   private setupConfigurationChangeListeners() {
-    vscode.workspace.onDidChangeConfiguration((event) => {
+    // 清理之前的监听器（如果存在）
+    if (this._configurationChangeDisposable) {
+      this._configurationChangeDisposable.dispose()
+    }
+
+    this._configurationChangeDisposable = vscode.workspace.onDidChangeConfiguration((event) => {
       const configKeys = [
         'markdownPreview.documentWidth',
         'markdownPreview.fontSize',
@@ -652,10 +735,30 @@ export class MarkdownPreviewProvider implements vscode.WebviewPanelSerializer {
     // 清理滚动同步
     this.disposeScrollSync()
 
+    // 清理配置变化监听器
+    if (this._configurationChangeDisposable) {
+      this._configurationChangeDisposable.dispose()
+      this._configurationChangeDisposable = undefined
+    }
+
     // 清理面板
     if (this._panel) {
       this._panel.dispose()
       this._panel = undefined
     }
+
+    // 清理高亮器
+    this._highlighter = undefined
+
+    // 清理当前文档引用
+    this._currentDocument = undefined
+
+    // 清理编辑器映射
+    this._editorMap.clear()
+
+    // 清理最后的更新文档URI
+    this.lastUpdateDocumentUri = undefined
+
+    logger.info('MarkdownPreviewProvider 已完全清理')
   }
 }
