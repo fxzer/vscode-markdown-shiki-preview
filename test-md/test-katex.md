@@ -106,12 +106,12 @@ $$
 #### 麦克斯韦方程组
 
 $$
-\begin{align}
-\nabla \times \vec{\mathbf{B}} -\, \frac1c\, \frac{\partial\vec{\mathbf{E}}}{\partial t} &= \frac{4\pi}{c}\vec{\mathbf{j}} \\
-\nabla \cdot \vec{\mathbf{E}} &= 4 \pi \rho \\
-\nabla \times \vec{\mathbf{E}}\, +\, \frac1c\, \frac{\partial\vec{\mathbf{B}}}{\partial t} &= \vec{\mathbf{0}} \\
-\nabla \cdot \vec{\mathbf{B}} &= 0
-\end{align}
+\begin{aligned}
+\nabla \times \vec{B} -\, \frac{1}{c}\, \frac{\partial\vec{E}}{\partial t} &= \frac{4\pi}{c}\vec{j} \\
+\nabla \cdot \vec{E} &= 4 \pi \rho \\
+\nabla \times \vec{E}\, +\, \frac{1}{c}\, \frac{\partial\vec{B}}{\partial t} &= \vec{0} \\
+\nabla \cdot \vec{B} &= 0
+\end{aligned}
 $$
 
 #### 求和与乘积
@@ -273,9 +273,9 @@ $$
 
 ### 转义字符测试
 
-$$
-\$\frac{1}{2}\$ \quad \backslash\text{backslash}
-$$
+$
+\frac{1}{2} \quad \text{backslash}
+$
 
 ### 大括号测试
 
@@ -315,7 +315,7 @@ $$
 #### 颜色测试
 
 $$
-\color{red}{红色文本} \quad \color{blue}{蓝色文本} \quad \color{green}{绿色文本}
+\textcolor{red}{红色文本} \quad \textcolor{blue}{蓝色文本} \quad \textcolor{green}{绿色文本}
 $$
 
 #### 字体测试
@@ -327,7 +327,7 @@ $$
 #### 大小测试
 
 $$
-\Huge{巨大} \quad \huge{很大} \quad \Large{大} \quad \large{稍大} \quad \normalsize{正常} \quad \small{小} \quad \footnotesize{脚注大小}
+\text{巨大} \quad \text{很大} \quad \text{大} \quad \text{稍大} \quad \text{正常} \quad \text{小} \quad \text{脚注大小}
 $$
 
 #### 上标和下标嵌套

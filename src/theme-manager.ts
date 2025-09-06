@@ -2,6 +2,7 @@ import type { Highlighter } from 'shiki'
 import * as matter from 'gray-matter'
 import MarkdownIt from 'markdown-it'
 import { bundledLanguages, bundledThemes, createHighlighter } from 'shiki'
+import { katex } from '@mdit/plugin-katex'
 import * as vscode from 'vscode'
 import { configService } from './config-service'
 import { generateHtmlTemplate } from './html-template'
@@ -34,6 +35,17 @@ export class ThemeManager {
       html: true,
       linkify: true,
       typographer: true,
+    })
+
+    // 添加 KaTeX 插件支持
+    this._md.use(katex, {
+      throwOnError: false,
+      displayMode: {
+        output: 'html'
+      },
+      inlineMode: {
+        output: 'html'
+      }
     })
 
     this.initializeHighlighter()

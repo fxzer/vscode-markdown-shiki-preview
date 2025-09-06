@@ -221,6 +221,7 @@
     "ext:publish": "vsxpub --no-dependencies"
   },
   "dependencies": {
+    "@mdit/plugin-katex": "^0.23.1",
     "@shikijs/markdown-it": "^3.12.2",
     "@types/chroma-js": "^3.1.1",
     "chroma-js": "^3.1.2",
