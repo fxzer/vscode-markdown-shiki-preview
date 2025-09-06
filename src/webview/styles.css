@@ -1,6 +1,6 @@
 /* 布局相关样式 - 不依赖主题变量 */
 html {
-    font-size: var(--font-size, 14px);
+    font-size: var(--font-size, 0.875rem);
 }
 
 body {
@@ -28,7 +28,7 @@ body {
 blockquote {
     color: var(--markdown-darkened-foreground);
     background-color: var(--markdown-blockQuote-background-level1);
-    border-left: 4px solid var(--markdown-blockQuote-border);
+    border-left: 0.25rem solid var(--markdown-blockQuote-border);
     padding: 0.5rem 1rem;
     margin: 0 0 1rem 0;
     font-style: italic;
@@ -37,28 +37,28 @@ blockquote {
 /* blockquote嵌套层级样式 */
 blockquote blockquote {
     background-color: var(--markdown-blockQuote-background-level2);
-    border-left-width: 3px;
+    border-left-width: 0.1875rem;
 }
 
 blockquote blockquote blockquote {
     background-color: var(--markdown-blockQuote-background-level3);
-    border-left-width: 2px;
+    border-left-width: 0.125rem;
 }
 
 blockquote blockquote blockquote blockquote {
     background-color: var(--markdown-blockQuote-background-level4);
-    border-left-width: 2px;
+    border-left-width: 0.125rem;
 }
 
 blockquote blockquote blockquote blockquote blockquote {
     background-color: var(--markdown-blockQuote-background-level5);
-    border-left-width: 2px;
+    border-left-width: 0.125rem;
 }
 
 /* 表格样式 */
 th, td {
-    border: 0.5px solid var(--markdown-table-border);
-    padding: 8px 12px;
+    border: 0.03125rem solid var(--markdown-table-border);
+    padding: 0.5rem 0.75rem;
 }
 
 th {
@@ -71,16 +71,16 @@ th {
 code {
     background-color: var(--editor-foldBackground);
     color: var(--editor-foreground);
-    padding: 0.2rem 0.4rem;
+    padding: 0.125rem 0.25rem;
     margin: 0;
-    border-radius: 0.2rem;
+    border-radius: 0.125rem;
     font-family: 'SFMono-Regular', 'Consolas', 'Liberation Mono', 'Menlo', monospace;
 }
 
 pre {
     background-color: var(--markdown-codeBlock-background);
-    border-radius: 6px;
-    padding: 16px;
+    border-radius: 0.375rem;
+    padding: 1rem;
     overflow-x: auto;
 }
 
@@ -94,7 +94,7 @@ pre code {
 
 .shiki {
     background-color: var(--markdown-codeBlock-background) !important;
-    border-radius: 6px;
+    border-radius: 0.375rem;
     padding: 1rem;
     overflow-x: auto;
     margin-bottom: 1rem;
@@ -115,8 +115,8 @@ a:visited {
 }
 
 a:focus {
-    outline: 2px solid var(--textLink-foreground);
-    outline-offset: 2px;
+    outline: 0.125rem solid var(--textLink-foreground);
+    outline-offset: 0.125rem;
 }
 
 /* 标题样式 */
@@ -129,23 +129,23 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 h1 {    
-    font-size: 2em; 
+    font-size: 2rem; 
     color: var(--markdown-strong-foreground);
-    border-bottom: 1px solid var(--markdown-blockQuote-border); 
+    border-bottom: 0.0625rem solid var(--markdown-blockQuote-border); 
     padding-bottom: 0.3em; 
 }
 
 h2 { 
-    font-size: 1.5em; 
+    font-size: 1.5rem; 
     color: var(--markdown-strong-foreground);
-    border-bottom: 1px solid var(--markdown-blockQuote-border); 
+    border-bottom: 0.0625rem solid var(--markdown-blockQuote-border); 
     padding-bottom: 0.3em; 
 }
 
-h3 { font-size: 1.25em; }
-h4 { font-size: 1em; }
-h5 { font-size: 0.875em; }
-h6 { font-size: 0.85em; }
+h3 { font-size: 1.25rem; }
+h4 { font-size: 1rem; }
+h5 { font-size: 0.875rem; }
+h6 { font-size: 0.85rem; }
 
 /* 段落样式 */
 p { 
@@ -158,7 +158,7 @@ hr {
 
 /* 列表样式 */
 ul, ol {
-    padding-left: 2em;
+    padding-left: 2rem;
 }
 
 li+li {
@@ -192,8 +192,8 @@ table td:last-child {
 /* 折叠内容样式 */
 details {
     margin: 1rem 0;
-    border: 1px solid var(--markdown-table-border);
-    border-radius: 6px;
+    border: 0.0625rem solid var(--markdown-table-border);
+    border-radius: 0.375rem;
     background-color: var(--markdown-codeBlock-background);
 }
 
@@ -202,7 +202,7 @@ summary {
     cursor: pointer;
     font-weight: 600;
     background-color: var(--markdown-tableHeader-background);
-    border-radius: 6px 6px 0 0;
+    border-radius: 0.375rem 0.375rem 0 0;
     user-select: none;
     transition: background-color 0.2s ease;
 }
@@ -212,7 +212,7 @@ summary:hover {
 }
 
 details[open] summary {
-    border-radius: 6px 6px 0 0;
+    border-radius: 0.375rem 0.375rem 0 0;
 }
 
 details > *:not(summary) {
@@ -223,8 +223,8 @@ details > *:not(summary) {
 img {
     max-width: 100%;
     height: auto;
-    border-radius: 6px;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    border-radius: 0.375rem;
+    box-shadow: 0 0.0625rem 0.1875rem rgba(0, 0, 0, 0.1);
     margin: 0.5rem 0;
 }
 
@@ -248,14 +248,14 @@ ins {
     text-decoration: underline;
     background-color: var(--markdown-blockQuote-background-level1);
     padding: 0.1em 0.2em;
-    border-radius: 3px;
+    border-radius: 0.1875rem;
 }
 
 mark {
     background-color: #fff3cd;
     color: #856404;
     padding: 0.1em 0.2em;
-    border-radius: 3px;
+    border-radius: 0.1875rem;
 }
 
 u {
@@ -264,11 +264,11 @@ u {
 
 /* 脚注样式 */
 .footnote-ref {
-    font-size: 0.8em;
+    font-size: 0.8rem;
     vertical-align: super;
     color: var(--textLink-foreground);
     text-decoration: none;
-    margin-left: 0.2em;
+    margin-left: 0.2rem;
 }
 
 .footnote-ref:hover {
@@ -278,8 +278,8 @@ u {
 .footnotes {
     margin-top: 2rem;
     padding-top: 1rem;
-    border-top: 1px solid var(--markdown-table-border);
-    font-size: 0.9em;
+    border-top: 0.0625rem solid var(--markdown-table-border);
+    font-size: 0.9rem;
 }
 
 .footnotes ol {
@@ -327,13 +327,13 @@ dd {
 /* 其他语义元素样式 */
 kbd {
     background-color: var(--markdown-codeBlock-background);
-    border: 1px solid var(--markdown-table-border);
-    border-radius: 3px;
-    box-shadow: 0 1px 0 var(--markdown-table-border);
+    border: 0.0625rem solid var(--markdown-table-border);
+    border-radius: 0.1875rem;
+    box-shadow: 0 0.0625rem 0 var(--markdown-table-border);
     color: var(--editor-foreground);
     display: inline-block;
     font-family: monospace;
-    font-size: 0.9em;
+    font-size: 0.9rem;
     padding: 0.2em 0.4em;
     white-space: nowrap;
 }
@@ -342,9 +342,9 @@ samp {
     background-color: var(--markdown-codeBlock-background);
     color: var(--editor-foreground);
     font-family: monospace;
-    font-size: 0.9em;
+    font-size: 0.9rem;
     padding: 0.2em 0.4em;
-    border-radius: 3px;
+    border-radius: 0.1875rem;
 }
 
 var {
@@ -369,7 +369,7 @@ dfn {
 }
 
 sub, sup {
-    font-size: 0.75em;
+    font-size: 0.75rem;
     line-height: 0;
     position: relative;
     vertical-align: baseline;
@@ -384,12 +384,12 @@ sup {
 }
 
 small {
-    font-size: 0.875em;
+    font-size: 0.875rem;
     opacity: 0.8;
 }
 
 big {
-    font-size: 1.125em;
+    font-size: 1.125rem;
 }
 
 /* 引用样式增强 */
@@ -402,7 +402,7 @@ blockquote p:last-child {
     margin: 1.5rem 0;
     text-align: center;
     background-color: var(--markdown-codeBlock-background);
-    border-radius: 6px;
+    border-radius: 0.375rem;
     padding: 1rem;
     overflow-x: auto;
 }
@@ -417,8 +417,8 @@ blockquote p:last-child {
     margin: 1.5rem 0;
     padding: 1rem;
     background-color: var(--markdown-blockQuote-background-level1);
-    border-left: 4px solid #dc3545;
-    border-radius: 6px;
+    border-left: 0.25rem solid #dc3545;
+    border-radius: 0.375rem;
 }
 
 .mermaid-error h4 {
@@ -434,8 +434,8 @@ blockquote p:last-child {
 
 .mermaid-error details {
     margin: 0.5rem 0 0 0;
-    border: 1px solid var(--markdown-table-border);
-    border-radius: 4px;
+    border: 0.0625rem solid var(--markdown-table-border);
+    border-radius: 0.25rem;
     background-color: var(--markdown-codeBlock-background);
 }
 
@@ -444,7 +444,7 @@ blockquote p:last-child {
     cursor: pointer;
     font-weight: 600;
     background-color: var(--markdown-tableHeader-background);
-    border-radius: 4px 4px 0 0;
+    border-radius: 0.25rem 0.25rem 0 0;
     user-select: none;
 }
 
