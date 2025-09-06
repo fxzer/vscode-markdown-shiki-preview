@@ -99,6 +99,29 @@ export class ThemeManager {
       return
     }
 
+    // 保存默认的fence渲染器
+    const defaultFenceRenderer = this._md.renderer.rules.fence || function(tokens, idx, options, env, self) {
+      return self.renderToken(tokens, idx, options)
+    }
+
+    // 自定义fence渲染器以支持Mermaid
+    this._md.renderer.rules.fence = (tokens, idx, options, env, self) => {
+      const token = tokens[idx]
+      const info = token.info ? token.info.trim() : ''
+      
+      // 检查是否是Mermaid代码块
+      if (info === 'mermaid') {
+        const code = token.content.trim()
+        const id = `mermaid-${idx}-${Date.now()}`
+        
+        // 直接返回mermaid div，让前端JS处理
+        return `<div class="mermaid" id="${id}">${code}</div>`
+      }
+      
+      // 对于非Mermaid代码块，使用默认的高亮渲染
+      return defaultFenceRenderer(tokens, idx, options, env, self)
+    }
+
     this._md.set({
       highlight: (code, lang) => {
         if (!this._highlighter) {

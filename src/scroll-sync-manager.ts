@@ -181,6 +181,22 @@ export class ScrollSyncManager {
   }
 
   /**
+   * 启用滚动同步
+   */
+  public enableScrollSync(): void {
+    if (this._currentDocument) {
+      this.setupScrollSync(this._currentDocument)
+    }
+  }
+
+  /**
+   * 禁用滚动同步
+   */
+  public disableScrollSync(): void {
+    this.disposeScrollSync()
+  }
+
+  /**
    * 清理滚动同步相关资源
    */
   public disposeScrollSync(): void {

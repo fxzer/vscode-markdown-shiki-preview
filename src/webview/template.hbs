@@ -3,11 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline' {{extensionUri}}; script-src 'nonce-{{nonce}}'; img-src data: https:;">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline' {{extensionUri}}; script-src 'nonce-{{nonce}}' 'unsafe-inline' https://cdn.jsdelivr.net; img-src data: https:;">
     <title>Markdown Preview</title>
     <style>
         {{{themeStyles}}}
     </style>
+    <!-- Mermaid 库 -->
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
 </head>
 <body>
     <div class="container">

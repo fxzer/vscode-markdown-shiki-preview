@@ -5,7 +5,6 @@ import * as vscode from 'vscode'
 import { currentTheme } from './config'
 import { displayName } from './generated/meta'
 import { MarkdownPreviewProvider } from './preview-provider'
-import { getCurrentTheme } from './utils'
 
 // 使用新模板的日志系统
 const logger = useLogger(displayName)
@@ -152,7 +151,6 @@ const { activate, deactivate } = defineExtension((ctx) => {
       window.showErrorMessage(`Failed to load themes: ${error}`)
     }
   })
-
 
   // 监听活动编辑器变化，自动更新预览内容和滚动同步（带防抖）
   ctx.subscriptions.push(

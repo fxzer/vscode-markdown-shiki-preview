@@ -13,6 +13,119 @@ document.addEventListener('click', (event) => {
   }
 })
 
+// 配置mermaid
+const mermaidConfig = {
+  startOnLoad: false,
+  theme: 'default',
+  securityLevel: 'loose',
+  fontFamily: 'inherit',
+  flowchart: {
+    useMaxWidth: true,
+    htmlLabels: true,
+    curve: 'basis'
+  },
+  sequence: {
+    useMaxWidth: true,
+    wrap: true
+  },
+  gantt: {
+    useMaxWidth: true
+  },
+  journey: {
+    useMaxWidth: true
+  },
+  pie: {
+    useMaxWidth: true
+  }
+}
+
+// 初始化mermaid
+function initMermaid() {
+  console.log('尝试初始化 Mermaid...')
+  if (typeof mermaid !== 'undefined') {
+    console.log('Mermaid 库已加载，正在初始化...')
+    mermaid.initialize(mermaidConfig)
+    
+    // 等待一小段时间确保 DOM 完全加载
+    setTimeout(() => {
+      console.log('开始渲染 Mermaid 图表...')
+      renderMermaidCharts()
+    }, 500)
+  } else {
+    console.warn('Mermaid 库未加载，等待加载...')
+    // 如果 Mermaid 库尚未加载，等待一段时间后重试
+    setTimeout(initMermaid, 1000)
+  }
+}
+
+// 渲染所有mermaid图表
+function renderMermaidCharts() {
+  const mermaidElements = document.querySelectorAll('.mermaid')
+  console.log(`找到 ${mermaidElements.length} 个 Mermaid 代码块`)
+  
+  mermaidElements.forEach((element, index) => {
+    const graphDefinition = element.textContent.trim()
+    const graphId = `graph-${index}-${Date.now()}`
+    
+    try {
+      // 使用最新的mermaid API
+      mermaid.render(graphId, graphDefinition).then(({svg}) => {
+        element.innerHTML = svg
+      }).catch(error => {
+        console.error('Mermaid render error:', error)
+        element.innerHTML = `<pre style="color: red;">Mermaid渲染错误: ${error.message}</pre>`
+      })
+    } catch (error) {
+      console.error('Mermaid error:', error)
+      element.innerHTML = `<pre style="color: red;">Mermaid解析错误: ${error.message}</pre>`
+    }
+  })
+}
+
+// 等待 DOM 加载完成后初始化 Mermaid
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initMermaid)
+} else {
+  initMermaid()
+}
+
+// 监听内容变化，重新渲染 Mermaid 图表
+const observer = new MutationObserver((mutations) => {
+  mutations.forEach((mutation) => {
+    if (mutation.addedNodes) {
+      // 检查是否有新的 Mermaid 代码块添加
+      const hasNewMermaid = Array.from(mutation.addedNodes).some(node => {
+        if (node.nodeType === Node.ELEMENT_NODE) {
+          return node.classList?.contains('mermaid') || 
+                 node.querySelector?.('.mermaid') !== null
+        }
+        return false
+      })
+      
+      if (hasNewMermaid && typeof mermaid !== 'undefined') {
+        console.log('检测到新的 Mermaid 代码块，重新渲染...')
+        renderMermaidCharts()
+      }
+    }
+  })
+})
+
+// 开始观察整个文档的变化
+observer.observe(document.body, {
+  childList: true,
+  subtree: true
+})
+
+// 监听VSCode主题变化
+window.addEventListener('message', event => {
+  const message = event.data
+  if (message.type === 'updateTheme') {
+    mermaidConfig.theme = message.theme
+    mermaid.initialize(mermaidConfig)
+    renderMermaidCharts()
+  }
+})
+
 // 滚动同步 - 优化版本，带防抖、阈值控制和缓存
 let isScrollingFromEditor = false
 let scrollTimeout = null
