@@ -1,4 +1,4 @@
-/** eslint-disable prefer-const */
+
 # 代码块测试
 
 ## 行内代码

@@ -6,7 +6,7 @@ import { bundledLanguages, bundledThemes, createHighlighter } from 'shiki'
 import * as vscode from 'vscode'
 import { generateHtmlTemplate } from './html-template'
 import { ThemeRenderer } from './theme-renderer'
-import { getCurrentTheme, getFontFamily, getFontSize, getLineHeight, getSyncScroll, logger } from './utils'
+import { getCurrentTheme, getFontFamily, getFontSize, getLineHeight, getSyncScroll, getDocumentWidth, logger } from './utils'
 
 export class MarkdownPreviewProvider implements vscode.WebviewPanelSerializer {
   private _panel: vscode.WebviewPanel | undefined
@@ -47,6 +47,9 @@ export class MarkdownPreviewProvider implements vscode.WebviewPanelSerializer {
     this.debouncedUpdateContent = debounce(this.performContentUpdate.bind(this), 300)
 
     this.initializeHighlighter()
+    
+    // 监听配置变化，实时更新预览
+    this.setupConfigurationChangeListeners()
   }
 
   private updatePanelTitle(document?: vscode.TextDocument) {
@@ -418,21 +421,23 @@ export class MarkdownPreviewProvider implements vscode.WebviewPanelSerializer {
     const fontSize = getFontSize(document.uri)
     const lineHeight = getLineHeight(document.uri)
     const fontFamily = getFontFamily(document.uri)
+    const documentWidth = getDocumentWidth(document.uri)
 
     logger.info('[updateContent] Generating HTML with theme:', currentTheme)
-    this._panel.webview.html = this.getHtmlForWebview(html, currentTheme, fontSize, lineHeight, fontFamily)
+    this._panel.webview.html = this.getHtmlForWebview(html, currentTheme, fontSize, lineHeight, fontFamily, documentWidth)
 
     // 重置主题更改标志，表示已经完成渲染
     this._themeChanged = false
     logger.info('[updateContent] HTML updated and _themeChanged reset to false')
   }
 
-  private getHtmlForWebview(content: string, theme: string, fontSize: number, lineHeight: number, fontFamily: string): string {
+  private getHtmlForWebview(content: string, theme: string, fontSize: number, lineHeight: number, fontFamily: string, documentWidth: string): string {
     const nonce = this.getNonce()
     const themeStyles = this._themeRenderer.getThemeCSS(theme, {
       fontSize,
       lineHeight,
       fontFamily,
+      documentWidth,
     })
 
     return generateHtmlTemplate({
@@ -440,6 +445,7 @@ export class MarkdownPreviewProvider implements vscode.WebviewPanelSerializer {
       themeStyles,
       nonce,
       extensionUri: this._extensionUri.toString(),
+      documentWidth,
     })
   }
 
@@ -601,6 +607,31 @@ export class MarkdownPreviewProvider implements vscode.WebviewPanelSerializer {
       clearTimeout(this._scrollTimeout)
       this._scrollTimeout = undefined
     }
+  }
+
+  /**
+   * 设置配置变化监听器，当配置改变时自动更新预览
+   */
+  private setupConfigurationChangeListeners() {
+    vscode.workspace.onDidChangeConfiguration((event) => {
+      const configKeys = [
+        'markdownPreview.documentWidth',
+        'markdownPreview.fontSize',
+        'markdownPreview.lineHeight',
+        'markdownPreview.fontFamily',
+        'markdownPreview.syncScroll'
+      ]
+
+      const hasRelevantChange = configKeys.some(key => event.affectsConfiguration(key))
+      
+      if (hasRelevantChange && this._panel && this._currentDocument) {
+        logger.info('配置发生变化，自动更新预览内容')
+        // 强制重新渲染，清除缓存
+        this.lastUpdateDocumentUri = undefined
+        this._themeChanged = true
+        this.updateContent(this._currentDocument)
+      }
+    })
   }
 
   dispose() {

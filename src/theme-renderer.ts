@@ -41,12 +41,14 @@ export class ThemeRenderer {
    * @param layoutOptions.fontSize 字体大小
    * @param layoutOptions.lineHeight 行高
    * @param layoutOptions.fontFamily 字体家族
+   * @param layoutOptions.documentWidth 文档容器宽度
    * @returns CSS样式字符串
    */
   getThemeCSS(theme: string, layoutOptions?: {
     fontSize: number
     lineHeight: number
     fontFamily: string
+    documentWidth?: string
   }): string {
     if (!this.highlighter)
       return ''
@@ -57,13 +59,16 @@ export class ThemeRenderer {
       if (!themeData || !themeData.colors)
         return ''
 
-      // 使用抽离的 generateThemeStyles 函数
       const defaultLayoutOptions = {
         fontSize: 14,
         lineHeight: 1.6,
         fontFamily: 'Consolas, "Courier New", monospace',
+        documentWidth: '1000px',
       }
-      const finalLayoutOptions = layoutOptions || defaultLayoutOptions
+      const finalLayoutOptions = {
+        ...defaultLayoutOptions,
+        ...layoutOptions,
+      }
       const themeStyles = generateThemeStyles(themeData.colors, finalLayoutOptions, this.highlighter, theme)
 
       return themeStyles

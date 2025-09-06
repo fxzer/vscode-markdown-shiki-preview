@@ -192,6 +192,11 @@
             "Fira Code",
             "JetBrains Mono"
           ]
+        },
+        "markdownPreview.documentWidth": {
+          "type": "string",
+          "default": "1000px",
+          "description": "Controls the container width for preview content. Accepts CSS width values like '800px', '50%', '100vw', etc."
         }
       }
     }

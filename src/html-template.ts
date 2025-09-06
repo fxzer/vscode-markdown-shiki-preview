@@ -15,6 +15,8 @@ export interface HtmlTemplateOptions {
   nonce: string
   /** 扩展URI */
   extensionUri: string
+  /** 文档容器宽度 */
+  documentWidth: string
 }
 
 /**
@@ -38,6 +40,7 @@ export function generateThemeStyles(
     fontSize: number
     lineHeight: number
     fontFamily: string
+    documentWidth: string
   },
   _highlighter?: any,
   themeName?: string,
@@ -83,6 +86,12 @@ export function generateThemeStyles(
             padding: 1.5rem;
             line-height: ${layoutOptions.lineHeight};
             font-family: ${layoutOptions.fontFamily};
+        }
+        .container {
+            max-width: ${layoutOptions.documentWidth};
+            margin: 0 auto;
+            padding: 0;
+            box-sizing: border-box;
         }`
   // 生成元素样式
   const elementStyles = `
@@ -91,11 +100,6 @@ export function generateThemeStyles(
             color: var(--editor-foreground);
         }
 
-        .container {
-            max-width: 900px;
-            margin: 0 auto;
-        }
-        
         ::selection {
              background: var(--editor-selectionBackground);
          }

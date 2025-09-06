@@ -13,7 +13,7 @@ export const logger = useLogger(displayName)
  * @param resource 资源URI，用于获取工作区文件夹特定配置
  * @returns 配置值
  */
-export function getConfigWithPriority<T>(
+function getConfigWithPriority<T>(
   key: string,
   defaultValue: T,
   resource?: vscode.Uri,
@@ -110,4 +110,16 @@ export function getFontFamily(resource?: vscode.Uri): string {
  */
 export function getSyncScroll(resource?: vscode.Uri): boolean {
   return getConfigWithPriority('syncScroll', true, resource)
+}
+
+/**
+ * 获取文档宽度配置
+ *
+ * @param resource 资源URI
+ * @returns 文档宽度
+ */
+export function getDocumentWidth(
+  resource?: vscode.Uri,
+): string {
+  return getConfigWithPriority('documentWidth', '1000px', resource)
 }
