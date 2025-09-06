@@ -22,9 +22,9 @@
 ```javascript
 // 这是一个用于测试代码块宽度的示例代码
 function exampleFunction() {
-  console.log('This is a test function to check code block width in preview');
-  const longVariableNameToTestCodeBlockWidthInPreview = 'This is a very long string to test the width of code blocks in the preview';
-  return longVariableNameToTestCodeBlockWidthInPreview;
+  console.log('This is a test function to check code block width in preview')
+  const longVariableNameToTestCodeBlockWidthInPreview = 'This is a very long string to test the width of code blocks in the preview'
+  return longVariableNameToTestCodeBlockWidthInPreview
 }
 ```
 

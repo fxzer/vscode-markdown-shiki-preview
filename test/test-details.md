@@ -34,7 +34,7 @@
 
 ```javascript
 // 代码块
-console.log('Hello from details');
+console.log('Hello from details')
 ```
 
 > 这是一个引用。
@@ -123,7 +123,7 @@ console.log('Hello from details');
 ### 仅包含空白字符
 
 :::details[仅空白字符]
-   
+
 :::
 
 ### HTML标签混合

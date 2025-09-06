@@ -9,14 +9,28 @@ export const {
   fontFamily,
   documentWidth,
 } = defineConfigs('markdownPreview', {
-  currentTheme: String,
-  fontSize: Number,
-  lineHeight: Number,
-  syncScroll: Boolean,
-  fontFamily: String,
+  currentTheme: {
+    type: String,
+    default: 'vitesse-dark',
+  },
+  fontSize: {
+    type: Number,
+    default: 14,
+  },
+  lineHeight: {
+    type: Number,
+    default: 1.6,
+  },
+  syncScroll: {
+    type: Boolean,
+    default: true,
+  },
+  fontFamily: {
+    type: String,
+    default: 'system-ui',
+  },
   documentWidth: {
     type: String,
     default: '1000px',
-    description: '文档宽度 - 控制预览内容的容器宽度',
   },
 })

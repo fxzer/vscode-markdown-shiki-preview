@@ -34,7 +34,7 @@
   "icon": "res/icon.png",
   "files": [
     "LICENSE.md",
-    "dist/*",
+    "dist/**/*",
     "res/*"
   ],
   "engines": {
@@ -235,6 +235,7 @@
     "bumpp": "^10.2.3",
     "eslint": "^9.34.0",
     "esno": "^4.8.0",
+    "handlebars": "^4.7.8",
     "ovsx": "^0.10.5",
     "pnpm": "^10.15.1",
     "reactive-vscode": "^0.3.2",

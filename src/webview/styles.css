@@ -1,0 +1,398 @@
+/* 布局相关样式 - 不依赖主题变量 */
+html {
+    font-size: var(--font-size, 14px);
+}
+
+body {
+    margin: 0;
+    padding: 1.5rem;
+    line-height: var(--line-height, 1.6);
+    font-family: var(--font-family, system-ui);
+    background-color: var(--editor-background);
+    color: var(--editor-foreground);
+}
+
+.container {
+    max-width: var(--document-width, 800px);
+    margin: 0 auto;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+/* 选择样式 */
+::selection {
+    background: var(--editor-selectionBackground);
+}
+
+/* 块引用样式 */
+blockquote {
+    color: var(--markdown-darkened-foreground);
+    background-color: var(--markdown-blockQuote-background-level1);
+    border-left: 4px solid var(--markdown-blockQuote-border);
+    padding: 0.5rem 1rem;
+    margin: 0 0 1rem 0;
+    font-style: italic;
+}
+
+/* blockquote嵌套层级样式 */
+blockquote blockquote {
+    background-color: var(--markdown-blockQuote-background-level2);
+    border-left-width: 3px;
+}
+
+blockquote blockquote blockquote {
+    background-color: var(--markdown-blockQuote-background-level3);
+    border-left-width: 2px;
+}
+
+blockquote blockquote blockquote blockquote {
+    background-color: var(--markdown-blockQuote-background-level4);
+    border-left-width: 2px;
+}
+
+blockquote blockquote blockquote blockquote blockquote {
+    background-color: var(--markdown-blockQuote-background-level5);
+    border-left-width: 2px;
+}
+
+/* 表格样式 */
+th, td {
+    border: 0.5px solid var(--markdown-table-border);
+    padding: 8px 12px;
+}
+
+th {
+    background-color: var(--markdown-tableHeader-background);
+    color: var(--editor-foreground);
+    font-weight: 600;
+}
+
+/* 代码样式 */
+code {
+    background-color: var(--editor-foldBackground);
+    color: var(--editor-foreground);
+    padding: 0.2rem 0.4rem;
+    margin: 0;
+    border-radius: 0.2rem;
+    font-family: 'SFMono-Regular', 'Consolas', 'Liberation Mono', 'Menlo', monospace;
+}
+
+pre {
+    background-color: var(--markdown-codeBlock-background);
+    border-radius: 6px;
+    padding: 16px;
+    overflow-x: auto;
+}
+
+pre code {
+    background-color: transparent;
+    padding: 0;
+    margin: 0;
+    font-size: 100%;
+    border-radius: 0;
+}
+
+.shiki {
+    background-color: var(--markdown-codeBlock-background) !important;
+    border-radius: 6px;
+    padding: 1rem;
+    overflow-x: auto;
+    margin-bottom: 1rem;
+}
+
+/* 链接样式 */
+a {
+    color: var(--textLink-foreground);
+    text-decoration: none;
+}
+
+a:hover {
+    text-decoration: underline;
+}
+
+a:visited {
+    color: var(--textLink-foreground);
+}
+
+a:focus {
+    outline: 2px solid var(--textLink-foreground);
+    outline-offset: 2px;
+}
+
+/* 标题样式 */
+h1, h2, h3, h4, h5, h6 {
+    margin-top: 1.5em;
+    margin-bottom: 1.5em;
+    font-weight: 600;
+    line-height: 1.25;
+    color: var(--editor-foreground);
+}
+
+h1 {    
+    font-size: 2em; 
+    color: var(--markdown-strong-foreground);
+    border-bottom: 1px solid var(--markdown-blockQuote-border); 
+    padding-bottom: 0.3em; 
+}
+
+h2 { 
+    font-size: 1.5em; 
+    color: var(--markdown-strong-foreground);
+    border-bottom: 1px solid var(--markdown-blockQuote-border); 
+    padding-bottom: 0.3em; 
+}
+
+h3 { font-size: 1.25em; }
+h4 { font-size: 1em; }
+h5 { font-size: 0.875em; }
+h6 { font-size: 0.85em; }
+
+/* 段落样式 */
+p { 
+    color: var(--editor-foreground);
+}
+
+hr {
+    border-color: var(--editor-foreground);
+}
+
+/* 列表样式 */
+ul, ol {
+    padding-left: 2em;
+}
+
+li+li {
+    margin-bottom: 0.25em;
+}
+
+ul ul, ol ol, ul ol, ol ul {
+    margin-top: 0.25rem;
+    margin-bottom: 0.25rem;
+}
+
+/* 表格样式增强 */
+table {
+    border-collapse: collapse;
+    border-spacing: 0;
+    border-collapse: separate;
+    margin-bottom: 1rem;
+    width: max-content;
+}
+
+table th:first-child,
+table td:first-child {
+    border-left: none;
+}
+
+table th:last-child,
+table td:last-child {
+    border-right: none;
+}
+
+/* 折叠内容样式 */
+details {
+    margin: 1rem 0;
+    border: 1px solid var(--markdown-table-border);
+    border-radius: 6px;
+    background-color: var(--markdown-codeBlock-background);
+}
+
+summary {
+    padding: 0.75rem 1rem;
+    cursor: pointer;
+    font-weight: 600;
+    background-color: var(--markdown-tableHeader-background);
+    border-radius: 6px 6px 0 0;
+    user-select: none;
+    transition: background-color 0.2s ease;
+}
+
+summary:hover {
+    background-color: var(--editor-foldBackground);
+}
+
+details[open] summary {
+    border-radius: 6px 6px 0 0;
+}
+
+details > *:not(summary) {
+    padding: 0 1rem 1rem 1rem;
+}
+
+/* 图片样式 */
+img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 6px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    margin: 0.5rem 0;
+}
+
+/* 文本强调元素样式 */
+strong, b {
+    font-weight: 600;
+    color: var(--markdown-strong-foreground);
+}
+
+em, i {
+    font-style: italic;
+    color: var(--editor-foreground);
+}
+
+del, s {
+    text-decoration: line-through;
+    opacity: 0.7;
+}
+
+ins {
+    text-decoration: underline;
+    background-color: var(--markdown-blockQuote-background-level1);
+    padding: 0.1em 0.2em;
+    border-radius: 3px;
+}
+
+mark {
+    background-color: #fff3cd;
+    color: #856404;
+    padding: 0.1em 0.2em;
+    border-radius: 3px;
+}
+
+u {
+    text-decoration: underline;
+}
+
+/* 脚注样式 */
+.footnote-ref {
+    font-size: 0.8em;
+    vertical-align: super;
+    color: var(--textLink-foreground);
+    text-decoration: none;
+    margin-left: 0.2em;
+}
+
+.footnote-ref:hover {
+    text-decoration: underline;
+}
+
+.footnotes {
+    margin-top: 2rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--markdown-table-border);
+    font-size: 0.9em;
+}
+
+.footnotes ol {
+    padding-left: 1.5rem;
+}
+
+.footnotes li {
+    margin-bottom: 0.5em;
+}
+
+/* 定义列表样式 */
+dl {
+    margin: 1rem 0;
+}
+
+dt {
+    font-weight: 600;
+    color: var(--markdown-strong-foreground);
+    margin-top: 1rem;
+    margin-bottom: 0.5rem;
+}
+
+dd {
+    margin-left: 1.5rem;
+    margin-bottom: 0.5rem;
+    color: var(--editor-foreground);
+}
+
+/* 任务列表样式 */
+.task-list-item {
+    list-style-type: none;
+    margin-left: -1.5em;
+}
+
+.task-list-item input[type="checkbox"] {
+    margin-right: 0.5rem;
+    vertical-align: middle;
+}
+
+.task-list-item input[type="checkbox"]:checked + * {
+    text-decoration: line-through;
+    opacity: 0.7;
+}
+
+/* 其他语义元素样式 */
+kbd {
+    background-color: var(--markdown-codeBlock-background);
+    border: 1px solid var(--markdown-table-border);
+    border-radius: 3px;
+    box-shadow: 0 1px 0 var(--markdown-table-border);
+    color: var(--editor-foreground);
+    display: inline-block;
+    font-family: monospace;
+    font-size: 0.9em;
+    padding: 0.2em 0.4em;
+    white-space: nowrap;
+}
+
+samp {
+    background-color: var(--markdown-codeBlock-background);
+    color: var(--editor-foreground);
+    font-family: monospace;
+    font-size: 0.9em;
+    padding: 0.2em 0.4em;
+    border-radius: 3px;
+}
+
+var {
+    font-style: italic;
+    color: var(--textLink-foreground);
+}
+
+cite {
+    font-style: italic;
+    color: var(--markdown-strong-foreground);
+}
+
+abbr {
+    border-bottom: 1px dotted var(--markdown-table-border);
+    cursor: help;
+}
+
+dfn {
+    font-style: italic;
+    font-weight: 600;
+    color: var(--markdown-strong-foreground);
+}
+
+sub, sup {
+    font-size: 0.75em;
+    line-height: 0;
+    position: relative;
+    vertical-align: baseline;
+}
+
+sub {
+    bottom: -0.25em;
+}
+
+sup {
+    top: -0.5em;
+}
+
+small {
+    font-size: 0.875em;
+    opacity: 0.8;
+}
+
+big {
+    font-size: 1.125em;
+}
+
+/* 引用样式增强 */
+blockquote p:last-child {
+    margin-bottom: 0;
+}
