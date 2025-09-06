@@ -31,10 +31,10 @@ export class MarkdownPreviewProvider implements vscode.WebviewPanelSerializer {
 
     if (document) {
       const fileName = document.fileName.split('/').pop() || 'Unknown'
-      this._panel.title = `Markdown Preview [${fileName}]`
+      this._panel.title = `预览 [${fileName}]`
     }
     else {
-      this._panel.title = 'Markdown Preview'
+      this._panel.title = '预览'
     }
   }
 
@@ -60,6 +60,8 @@ export class MarkdownPreviewProvider implements vscode.WebviewPanelSerializer {
       this._contentManager.setPanel(this._panel)
 
       this._panel.onDidDispose(() => {
+        // 清理内容管理器的状态
+        this._contentManager.clearLastUpdateDocumentUri()
         this._panel = undefined
       })
 
@@ -114,6 +116,8 @@ export class MarkdownPreviewProvider implements vscode.WebviewPanelSerializer {
     this._contentManager.setPanel(this._panel)
 
     webviewPanel.onDidDispose(() => {
+      // 清理内容管理器的状态
+      this._contentManager.clearLastUpdateDocumentUri()
       this._panel = undefined
     })
 
@@ -313,6 +317,9 @@ export class MarkdownPreviewProvider implements vscode.WebviewPanelSerializer {
       this._panel.dispose()
       this._panel = undefined
     }
+
+    // 清理内容管理器的状态
+    this._contentManager.resetState()
 
     logger.info('MarkdownPreviewProvider 已完全清理')
   }

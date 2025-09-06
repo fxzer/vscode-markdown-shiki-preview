@@ -84,8 +84,8 @@ export class ContentManager {
     logger.info('[updateContent] Front matter data:', parsed.data)
     logger.info('[updateContent] Content length:', content.length)
 
-    // 避免不必要的重复渲染
-    if (this.lastUpdateDocumentUri === documentUri && this.lastUpdateConfig === currentConfig) {
+    // 避免不必要的重复渲染，但如果面板刚刚重新打开，强制更新
+    if (this.lastUpdateDocumentUri === documentUri && this.lastUpdateConfig === currentConfig && this._panel) {
       logger.info('[updateContent] Skipping update - same document and config')
       return
     }
@@ -235,5 +235,14 @@ export class ContentManager {
     this._panel = undefined
     this.lastUpdateDocumentUri = undefined
     this.lastUpdateConfig = ''
+  }
+
+  /**
+   * 重置状态，用于面板关闭时清理
+   */
+  public resetState(): void {
+    this.lastUpdateDocumentUri = undefined
+    this.lastUpdateConfig = ''
+    this.debouncedUpdateContent.cancel()
   }
 }
