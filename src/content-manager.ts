@@ -119,11 +119,11 @@ export class ContentManager {
 
     // 避免不必要的重复渲染，但如果面板刚刚重新打开，强制更新
     // 现在检查文档URI、配置和内容哈希
-    if (!force && 
-        this.lastUpdateDocumentUri === documentUri && 
-        this.lastUpdateConfig === currentConfig && 
-        this.lastUpdateContentHash === contentHash && 
-        this._panel) {
+    if (!force
+        && this.lastUpdateDocumentUri === documentUri
+        && this.lastUpdateConfig === currentConfig
+        && this.lastUpdateContentHash === contentHash
+        && this._panel) {
       logger.info('[updateContent] Skipping update - same document, config and content')
       return
     }
@@ -131,9 +131,8 @@ export class ContentManager {
     // 验证并修复当前主题
     const currentTheme = this._themeManager.validateAndFixTheme()
 
-    // 获取Markdown渲染器
-    const md = this._themeManager.getMarkdownRenderer()
-    const html = md.render(content)
+    // 异步渲染Markdown，处理语言按需加载
+    const html = await this._themeManager.renderMarkdown(content)
 
     // 使用配置服务获取所有配置
     const fontSize = configService.getFontSize(document.uri)

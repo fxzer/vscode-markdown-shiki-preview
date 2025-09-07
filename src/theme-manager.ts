@@ -185,9 +185,19 @@ export class ThemeManager {
    */
   private async initializeHighlighter(): Promise<void> {
     try {
+      // 定义一个默认加载的语言子集，以加快初始化速度
+      const defaultLangs = [
+        'markdown', 'md', 'javascript', 'js', 'typescript', 'ts',
+        'json', 'html', 'css', 'python', 'py', 'bash', 'shell', 'sh', 'yaml',
+      ]
+
+      // 确保默认主题和用户配置的主题被初始加载
+      const initialThemes = new Set<string>(['vitesse-dark', 'vitesse-light'])
+      initialThemes.add(this._currentShikiTheme)
+
       this._highlighter = await createHighlighter({
-        themes: Object.keys(bundledThemes),
-        langs: Object.keys(bundledLanguages),
+        themes: Array.from(initialThemes),
+        langs: defaultLangs,
       })
 
       // 设置主题渲染器的高亮器实例
@@ -264,13 +274,25 @@ export class ThemeManager {
           return `<pre><code>${code}</code></pre>`
         }
 
+        // 检查语言是否已加载
+        const loadedLanguages = this._highlighter.getLoadedLanguages()
+        const targetLang = lang || 'text'
+
+        if (!loadedLanguages.includes(targetLang as any)) {
+          // 如果语言未加载，返回未经高亮的代码块
+          // 实际的加载逻辑将在 renderMarkdown 中处理
+          logger.warn(`语言 '${targetLang}' 尚未加载，将以纯文本呈现。`)
+          return `<pre><code class="language-${targetLang}">${this._md.utils.escapeHtml(code)}</code></pre>`
+        }
+
         try {
           return this._highlighter.codeToHtml(code, {
-            lang: lang || 'text',
+            lang: targetLang,
             theme: this._currentShikiTheme,
           })
         }
-        catch {
+        catch (error) {
+          logger.error(`使用 Shiki 高亮代码失败 (语言: ${targetLang}):`, error)
           return this._highlighter.codeToHtml(code, {
             lang: 'text',
             theme: this._currentShikiTheme,
@@ -291,6 +313,21 @@ export class ThemeManager {
       // 验证主题名称是否有效
       if (!theme || typeof theme !== 'string') {
         throw new Error(`无效的主题名称: ${theme}`)
+      }
+
+      // 如果高亮器存在，按需加载新主题
+      if (this._highlighter && !this._highlighter.getLoadedThemes().includes(theme as any)) {
+        try {
+          logger.info(`[updateTheme] 主题 '${theme}' 尚未加载，正在加载...`)
+          await this._highlighter.loadTheme(theme as any)
+          logger.info(`[updateTheme] 主题 '${theme}' 加载成功。`)
+        }
+        catch (error) {
+          logger.error(`[updateTheme] 加载主题 '${theme}' 失败:`, error)
+          vscode.window.showErrorMessage(`加载主题 '${theme}' 失败。`)
+          // 如果加载失败，则不切换主题
+          return
+        }
       }
 
       // 强制更新主题，无论是否发生变化
@@ -316,8 +353,7 @@ export class ThemeManager {
           const parsed = matter.default(content)
           const markdownContent = parsed.content
 
-          const md = this.getMarkdownRenderer()
-          const html = md.render(markdownContent)
+          const html = await this.renderMarkdown(markdownContent)
 
           // 获取配置
           const fontSize = configService.getFontSize(this._currentDocument.uri)
@@ -368,8 +404,7 @@ export class ThemeManager {
           const parsed = matter.default(content)
           const markdownContent = parsed.content
 
-          const md = this.getMarkdownRenderer()
-          const html = md.render(markdownContent)
+          const html = await this.renderMarkdown(markdownContent)
 
           // 获取配置
           const fontSize = configService.getFontSize(this._currentDocument.uri)
@@ -437,6 +472,56 @@ export class ThemeManager {
    */
   public getMarkdownRenderer(): MarkdownIt {
     return this._md
+  }
+
+  /**
+   * 异步渲染Markdown内容，处理语言的按需加载
+   * @param markdownContent 要渲染的Markdown字符串
+   * @returns 渲染后的HTML字符串
+   */
+  public async renderMarkdown(markdownContent: string): Promise<string> {
+    if (!this._highlighter) {
+      logger.warn('高亮器未初始化，将使用无高亮的渲染。')
+      return this._md.render(markdownContent)
+    }
+
+    // 1. 解析Markdown获取所有代码块的语言
+    const tokens = this._md.parse(markdownContent, {})
+    const languages = new Set<string>()
+    for (const token of tokens) {
+      if (token.type === 'fence') {
+        const lang = token.info.split(/\s+/g)[0] // e.g., "js {line-numbers}" -> "js"
+        if (lang) {
+          languages.add(lang)
+        }
+      }
+    }
+
+    // 2. 识别哪些语言需要被加载
+    const loadedLanguages = this._highlighter.getLoadedLanguages()
+    const languagesToLoad = Array.from(languages).filter(
+      lang => !loadedLanguages.includes(lang as any),
+    )
+
+    // 3. 如果有需要加载的语言，则进行加载
+    if (languagesToLoad.length > 0) {
+      logger.info(`需要加载的语言: ${languagesToLoad.join(', ')}`)
+      await Promise.all(
+        languagesToLoad.map(async (lang) => {
+          try {
+            await this._highlighter?.loadLanguage(lang as any)
+            logger.info(`语言 '${lang}' 加载成功。`)
+          }
+          catch (error) {
+            logger.error(`加载语言 '${lang}' 失败:`, error)
+            // 即使某个语言加载失败，也不应中断整个渲染过程
+          }
+        }),
+      )
+    }
+
+    // 4. 所有需要的语言都已加载（或尝试加载）后，执行最终渲染
+    return this._md.render(markdownContent)
   }
 
   /**

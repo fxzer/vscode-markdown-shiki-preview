@@ -86,3 +86,114 @@ function greet(name) {
 + 新增行
 - 删除行
 ```
+
+## 热门语言代码块
+
+### Java
+```java
+public class HelloWorld {
+    public static void main(String[] args) {
+        System.out.println("Hello, World!");
+    }
+}
+```
+
+### C++
+```cpp
+#include <iostream>
+using namespace std;
+
+int main() {
+    cout << "Hello, World!" << endl;
+    return 0;
+}
+```
+
+### Go
+```go
+package main
+
+import "fmt"
+
+func main() {
+    fmt.Println("Hello, World!")
+}
+```
+
+### Rust
+```rust
+fn main() {
+    println!("Hello, World!");
+}
+```
+
+### C#
+```csharp
+using System;
+
+class Program {
+    static void Main() {
+        Console.WriteLine("Hello, World!");
+    }
+}
+```
+
+### PHP
+```php
+<?php
+echo "Hello, World!";
+?>
+```
+
+### Ruby
+```ruby
+puts "Hello, World!"
+```
+
+### Swift
+```swift
+print("Hello, World!")
+```
+
+### Kotlin
+```kotlin
+fun main() {
+    println("Hello, World!")
+}
+```
+
+### R
+```r
+print("Hello, World!")
+```
+
+### Dart
+```dart
+void main() {
+  print('Hello, World!');
+}
+```
+
+### Lua
+```lua
+print("Hello, World!")
+```
+
+### Julia
+```julia
+println("Hello, World!")
+```
+
+### Haskell
+```haskell
+main = putStrLn "Hello, World!"
+```
+
+### Scala
+```scala
+object Main {
+  def main(args: Array[String]): Unit = {
+    println("Hello, World!")
+  }
+}
+```
