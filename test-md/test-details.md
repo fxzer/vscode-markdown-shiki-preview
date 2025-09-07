@@ -90,7 +90,7 @@ console.log('Hello from details')
 这是一个提示容器，用于显示提示或技巧。
 ```javascript
 function hello() {
-  console.log("Hello, World!");
+  console.log('Hello, World!')
 }
 ```
 代码块也可以正常显示。
@@ -189,7 +189,6 @@ function hello() {
 
 :::details.inner{data-level="2"}
 内层容器，带有自定义数据属性。
-:::
 :::
 
 ### 特殊字符测试

@@ -157,10 +157,149 @@ export class ThemeManager {
 `
       },
       closeRender: () => {
-        return `</div>
-</details>
+        return '</div>
+</details>\n'
+      },
+    })
+
+    // 添加对嵌套容器的支持（使用更多冒号标记）
+    this._md.use(container, {
+      name: 'details',
+      marker: '::',
+      validate: (params) => {
+        return params.trim().startsWith('details')
+      },
+      openRender: (tokens, idx, _options, _env, _self) => {
+        const token = tokens[idx]
+        const info = token.info.trim()
+
+        // 默认值
+        let summary = '点击展开'
+        let attributes = ''
+        let isOpen = false
+
+        // 解析参数（去掉开头的 ::）
+        const cleanInfo = info.replace(/^::\s*/, '')
+        
+        if (cleanInfo !== 'details') {
+          // 提取标题 [标题]
+          const titleMatch = cleanInfo.match(/^details\s*\[([^\]]+)\]/)
+          if (titleMatch && titleMatch[1]) {
+            summary = titleMatch[1]
+          }
+
+          // 检查是否默认展开 {open}
+          if (cleanInfo.includes('{open}')) {
+            isOpen = true
+          }
+
+          // 提取ID #id
+          const idMatch = cleanInfo.match(/#([^\s{#.]+)/)
+          if (idMatch) {
+            attributes += ` id="${idMatch[1]}"`
+          }
+
+          // 提取类名 .class
+          const classMatches = cleanInfo.match(/\.([^\s{#.]+)/g)
+          if (classMatches) {
+            const classes = classMatches.map(match => match.substring(1)).join(' ')
+            attributes += ` class="${classes}"`
+          }
+
+          // 提取其他属性 {key="value"}
+          const attrMatches = cleanInfo.match(/\{([^}]+)\}/g)
+          if (attrMatches) {
+            attrMatches.forEach((match) => {
+              const content = match.slice(1, -1) // 去掉 { 和 }
+              if (content !== 'open') { // 已经处理过 open
+                const parts = content.split('=')
+                if (parts.length === 2) {
+                  const key = parts[0].trim()
+                  const value = parts[1].trim().replace(/^["']|["']$/g, '')
+                  attributes += ` ${key}="${value}"`
+                }
+              }
+            })
+          }
+        }
+
+        return `<details${attributes}${isOpen ? ' open' : ''}>
+<summary>${summary}</summary>
 `
-      }
+      },
+      closeRender: () => {
+        return '</details>\n'
+      },
+    })
+
+    // 添加对三层嵌套容器的支持（使用三个冒号标记）
+    this._md.use(container, {
+      name: 'details',
+      marker: ':::',
+      validate: (params) => {
+        return params.trim().startsWith('details')
+      },
+      openRender: (tokens, idx, _options, _env, _self) => {
+        const token = tokens[idx]
+        const info = token.info.trim()
+
+        // 默认值
+        let summary = '点击展开'
+        let attributes = ''
+        let isOpen = false
+
+        // 解析参数（去掉开头的 :::）
+        const cleanInfo = info.replace(/^:::\s*/, '')
+        
+        if (cleanInfo !== 'details') {
+          // 提取标题 [标题]
+          const titleMatch = cleanInfo.match(/^details\s*\[([^\]]+)\]/)
+          if (titleMatch && titleMatch[1]) {
+            summary = titleMatch[1]
+          }
+
+          // 检查是否默认展开 {open}
+          if (cleanInfo.includes('{open}')) {
+            isOpen = true
+          }
+
+          // 提取ID #id
+          const idMatch = cleanInfo.match(/#([^\s{#.]+)/)
+          if (idMatch) {
+            attributes += ` id="${idMatch[1]}"`
+          }
+
+          // 提取类名 .class
+          const classMatches = cleanInfo.match(/\.([^\s{#.]+)/g)
+          if (classMatches) {
+            const classes = classMatches.map(match => match.substring(1)).join(' ')
+            attributes += ` class="${classes}"`
+          }
+
+          // 提取其他属性 {key="value"}
+          const attrMatches = cleanInfo.match(/\{([^}]+)\}/g)
+          if (attrMatches) {
+            attrMatches.forEach((match) => {
+              const content = match.slice(1, -1) // 去掉 { 和 }
+              if (content !== 'open') { // 已经处理过 open
+                const parts = content.split('=')
+                if (parts.length === 2) {
+                  const key = parts[0].trim()
+                  const value = parts[1].trim().replace(/^["']|["']$/g, '')
+                  attributes += ` ${key}="${value}"`
+                }
+              }
+            })
+          }
+        }
+
+        return `<details${attributes}${isOpen ? ' open' : ''}>
+<summary>${summary}</summary>
+`
+      },
+      closeRender: () => {
+        return '</details>\n'
+      },
     })
 
     this.initializeHighlighter()
@@ -227,12 +366,12 @@ export class ThemeManager {
     }
 
     // 保存默认的fence渲染器
-    const defaultFenceRenderer = this._md.renderer.rules.fence || function (tokens, idx, options, _env, self) {
+    const defaultFenceRenderer = this._md.renderer.rules.fence || function (tokens, idx, options, env, self) {
       return self.renderToken(tokens, idx, options)
     }
 
     // 自定义fence渲染器以支持Mermaid
-    this._md.renderer.rules.fence = (tokens, idx, options, _env, self) => {
+    this._md.renderer.rules.fence = (tokens, idx, options, env, self) => {
       const token = tokens[idx]
       const info = token.info ? token.info.trim() : ''
 
@@ -250,12 +389,12 @@ export class ThemeManager {
         }
         else {
           // 如果未启用Mermaid预览，作为普通代码块处理
-          return defaultFenceRenderer(tokens, idx, options, _env, self)
+          return defaultFenceRenderer(tokens, idx, options, env, self)
         }
       }
 
       // 对于非Mermaid代码块，使用默认的高亮渲染
-      return defaultFenceRenderer(tokens, idx, options, _env, self)
+      return defaultFenceRenderer(tokens, idx, options, env, self)
     }
 
     this._md.set({

@@ -195,28 +195,113 @@ details {
     border: 0.0625rem solid var(--markdown-table-border);
     border-radius: 0.375rem;
     background-color: var(--markdown-codeBlock-background);
+    transition: border-color 0.2s ease;
+}
+
+details:hover {
+    border-color: var(--markdown-blockQuote-border);
 }
 
 summary {
     padding: 0.75rem 1rem;
+    border-radius:0.375rem;
     cursor: pointer;
     font-weight: 600;
     background-color: var(--markdown-tableHeader-background);
-    border-radius: 0.375rem 0.375rem 0 0;
     user-select: none;
     transition: background-color 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
 }
 
 summary:hover {
     background-color: var(--editor-foldBackground);
 }
 
+/* 添加折叠图标 */
+summary::before {
+    content: "▶";
+    display: inline-block;
+    font-size: 0.75rem;
+    transition: transform 0.2s ease;
+    color: var(--markdown-darkened-foreground);
+}
+
 details[open] summary {
-    border-radius: 0.375rem 0.375rem 0 0;
+    border-radius: 0.375rem;
+}
+
+details[open] summary::before {
+    transform: rotate(90deg);
 }
 
 details > *:not(summary) {
     padding: 0 1rem 1rem 1rem;
+}
+
+/* details 内部容器样式 */
+.details-inner {
+    padding: 1em;
+}
+
+details[open] .details-inner {
+    padding: 1em;
+}
+
+details.highlight {
+    border-color: var(--textLink-foreground);
+    background-color: var(--markdown-blockQuote-background-level1);
+}
+
+details.highlight summary {
+    background-color: var(--markdown-blockQuote-background-level2);
+}
+
+/* 嵌套的details容器样式 */
+details details {
+    margin: 0.75rem 0;
+    margin-left: 1rem;
+    border-color: var(--markdown-darkened-foreground);
+}
+
+details details summary {
+    background-color: var(--markdown-codeBlock-background);
+    font-size: 0.9rem;
+}
+
+/* 嵌套details的内容区域增加左边距 */
+details details > *:not(summary) {
+    padding-left: 0.5rem;
+}
+
+/* 多层嵌套的递进缩进 */
+details details details {
+    margin-left: 2rem;
+}
+
+details details details > *:not(summary) {
+    padding-left: 1rem;
+}
+
+details details details details {
+    margin-left: 3rem;
+}
+
+details details details details > *:not(summary) {
+    padding-left: 1.5rem;
+}
+details pre.shiki   {
+  border: 0.3px solid var(--markdown-table-border);
+} 
+
+/* 空内容的details容器 */
+details:empty::after {
+    content: "无内容";
+    display: block;
+    padding: 1rem;
+    color: var(--markdown-darkened-foreground);
+    font-style: italic;
 }
 
 /* 图片样式 */
