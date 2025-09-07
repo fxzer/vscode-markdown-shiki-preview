@@ -14,12 +14,32 @@ interface ThemeQuickPickItem extends vscode.QuickPickItem {
 }
 
 async function showEnhancedThemePicker(provider: MarkdownPreviewProvider): Promise<void> {
-  // 获取所有可用主题
-  const themes: ThemeQuickPickItem[] = Object.keys(bundledThemes).map(theme => ({
-    label: theme.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
-    description: theme,
-    theme,
-  }))
+  // 获取所有可用主题并动态分组排序
+  const themePromises = Object.values(bundledThemes).map(importer => importer())
+  const loadedThemes = await Promise.all(themePromises)
+  const allThemeData = loadedThemes.map(t => t.default)
+
+  const lightThemes: { label: string; theme: string }[] = []
+  const darkThemes: { label: string; theme: string }[] = []
+  
+  allThemeData.forEach(t => {
+    const themeInfo = { label: t.displayName, theme: t.name as string }
+    if (t.type === 'light') {
+      lightThemes.push(themeInfo)
+    } else if (t.type === 'dark') {
+      darkThemes.push(themeInfo)
+    }
+  })
+  
+  lightThemes.sort((a, b) => a.label.localeCompare(b.label))
+  darkThemes.sort((a, b) => a.label.localeCompare(b.label))
+
+  const themes: ThemeQuickPickItem[] = [
+    { label: 'Light Themes', theme: '', kind: vscode.QuickPickItemKind.Separator as any },
+    ...lightThemes,
+    { label: 'Dark Themes', theme: '', kind: vscode.QuickPickItemKind.Separator as any },
+    ...darkThemes,
+  ] as ThemeQuickPickItem[];
 
   const currentThemeValue = (currentTheme.value as unknown as string) || 'github-light'
 
