@@ -464,3 +464,116 @@ blockquote p:last-child {
     padding: 0;
     border-radius: 0;
 }
+
+/* 自定义容器样式 */
+.custom-container {
+    margin: 1.5rem 0;
+    padding: 1rem;
+    border-radius: 0.375rem;
+    border-left: 0.25rem solid;
+}
+
+.custom-container.info {
+    border-left-color: #aaabb0;
+    background-color: rgba(141, 145, 150, 0.16);
+}
+
+.custom-container.info::before {
+    content: "INFO";
+    display: block;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+    color: #aaabb0;
+    padding-left: 1.5rem;
+    position: relative;
+}
+
+.custom-container.info::before {
+    background-color: currentColor;
+    -webkit-mask-image: url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z'/%3E%3C/svg%3E");
+    mask-image: url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z'/%3E%3C/svg%3E");
+    -webkit-mask-position: 0 50%;
+    mask-position: 0 50%;
+    -webkit-mask-size: 1em;
+    mask-size: 1.3rem;
+    -webkit-mask-repeat: no-repeat;
+    mask-repeat: no-repeat;
+}
+
+.custom-container.warning {
+    border-left-color: #ffc107;
+    background-color: rgb(234 179 8 / 16%);
+}
+
+.custom-container.warning::before {
+    content: "WARNING";
+    display: block;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+    color: #ffc107;
+    padding-left: 1.5rem;
+    position: relative;
+}
+
+.custom-container.warning::before {
+    background-color: currentColor;
+    mask-image: url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1024 1024'%3E%3Cpath d='M576.286 752.57v-95.425q0-7.031-4.771-11.802t-11.3-4.772h-96.43q-6.528 0-11.3 4.772t-4.77 11.802v95.424q0 7.031 4.77 11.803t11.3 4.77h96.43q6.528 0 11.3-4.77t4.77-11.803zm-1.005-187.836 9.04-230.524q0-6.027-5.022-9.543-6.529-5.524-12.053-5.524H456.754q-5.524 0-12.053 5.524-5.022 3.516-5.022 10.547l8.538 229.52q0 5.023 5.022 8.287t12.053 3.265h92.913q7.032 0 11.803-3.265t5.273-8.287zM568.25 95.65l385.714 707.142q17.578 31.641-1.004 63.282-8.538 14.564-23.354 23.102t-31.892 8.538H126.286q-17.076 0-31.892-8.538T71.04 866.074q-18.582-31.641-1.004-63.282L455.75 95.65q8.538-15.57 23.605-24.61T512 62t32.645 9.04 23.605 24.61z'/%3E%3C/svg%3E");
+    mask-position: 0 50%;
+    mask-size: 1.3rem;
+    mask-repeat: no-repeat;
+}
+
+.custom-container.danger {
+    border-left-color: #dc3545;
+    background-color: rgb(244 63 94 / 16%);
+}
+
+.custom-container.danger::before {
+    content: "DANGER";
+    display: block;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+    color: #dc3545;
+    padding-left: 1.5rem;
+    position: relative;
+}
+
+.custom-container.danger::before {
+    background-color: currentColor;
+    -webkit-mask-image: url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z'/%3E%3C/svg%3E");
+    mask-image: url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z'/%3E%3C/svg%3E");
+    mask-position: 0 50%;
+    mask-size: 1.3rem;
+    mask-repeat: no-repeat;
+}
+
+.custom-container.tip {
+  background-color: rgb(16 185 129 / 16%);
+    border-left-color: #3dd68c;
+}
+
+.custom-container.tip::before {
+    content: "TIP";
+    display: block;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+    color: #3dd68c;
+    padding-left: 1.5rem;
+    position: relative;
+}
+
+.custom-container.tip::before {
+    background-color: currentColor;
+    mask-image: url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M7.941 18c-.297-1.273-1.637-2.314-2.187-3a8 8 0 1 1 12.49.002c-.55.685-1.888 1.726-2.185 2.998H7.94zM16 20v1a2 2 0 0 1-2 2h-4a2 2 0 0 1-2-2v-1h8zm-3-9.995V6l-4.5 6.005H11v4l4.5-6H13z'/%3E%3C/svg%3E");
+    mask-position: 0 50%;
+    mask-size: 1.3rem;
+    mask-repeat: no-repeat;
+}
+
+.custom-container p:first-child {
+    margin-top: 0;
+}
+
+.custom-container p:last-child {
+    margin-bottom: 0;
+}

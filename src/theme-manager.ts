@@ -1,5 +1,6 @@
 import type { Highlighter } from 'shiki'
 import { katex } from '@mdit/plugin-katex'
+import { container } from '@mdit/plugin-container'
 import * as matter from 'gray-matter'
 import MarkdownIt from 'markdown-it'
 import { bundledLanguages, bundledThemes, createHighlighter } from 'shiki'
@@ -39,6 +40,55 @@ export class ThemeManager {
 
     // 集成 KaTeX 数学公式支持
     this._md.use(katex)
+    
+    // 集成自定义容器支持
+    this._md.use(container, {
+      name: 'info',
+      marker: ':',
+      validate: (params, markup) => params.trim().split(' ', 2)[0] === 'info',
+      openRender: (tokens, idx) => {
+        return '<div class="custom-container info">\n'
+      },
+      closeRender: (tokens, idx) => {
+        return '</div>\n'
+      }
+    })
+    
+    this._md.use(container, {
+      name: 'warning',
+      marker: ':',
+      validate: (params, markup) => params.trim().split(' ', 2)[0] === 'warning',
+      openRender: (tokens, idx) => {
+        return '<div class="custom-container warning">\n'
+      },
+      closeRender: (tokens, idx) => {
+        return '</div>\n'
+      }
+    })
+    
+    this._md.use(container, {
+      name: 'danger',
+      marker: ':',
+      validate: (params, markup) => params.trim().split(' ', 2)[0] === 'danger',
+      openRender: (tokens, idx) => {
+        return '<div class="custom-container danger">\n'
+      },
+      closeRender: (tokens, idx) => {
+        return '</div>\n'
+      }
+    })
+    
+    this._md.use(container, {
+      name: 'tip',
+      marker: ':',
+      validate: (params, markup) => params.trim().split(' ', 2)[0] === 'tip',
+      openRender: (tokens, idx) => {
+        return '<div class="custom-container tip">\n'
+      },
+      closeRender: (tokens, idx) => {
+        return '</div>\n'
+      }
+    })
 
     this.initializeHighlighter()
   }
