@@ -20,5 +20,13 @@
     </script>
     <!-- KaTeX JS -->
     <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/katex.min.js" integrity="sha384-cMkvdD8LoxVzGF/RPUKAcvmm49FQ0oxwDF3BGKtDXcEc+T1b2N+teh/OJfpU0jr6" crossorigin="anonymous"></script>
+    {{#if hasMermaid}}
+    <script nonce="{{nonce}}">
+        // 如果存在Mermaid图表，则直接初始化
+        document.addEventListener('DOMContentLoaded', () => {
+            initMermaid();
+        });
+    </script>
+    {{/if}}
 </body>
 </html>

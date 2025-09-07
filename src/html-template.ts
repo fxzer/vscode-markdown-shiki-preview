@@ -20,6 +20,8 @@ export interface HtmlTemplateOptions {
   extensionUri: string
   /** 文档容器宽度 */
   documentWidth: string
+  /** 是否包含Mermaid图表 */
+  hasMermaid: boolean
 }
 
 /**
@@ -140,7 +142,7 @@ function getWebviewScript(_context?: any): string {
  * @returns 完整的HTML字符串
  */
 export function generateHtmlTemplate(options: HtmlTemplateOptions): string {
-  const { content, themeStyles, nonce, extensionUri } = options
+  const { content, themeStyles, nonce, extensionUri, hasMermaid } = options
 
   const viewData = {
     content,
@@ -148,7 +150,9 @@ export function generateHtmlTemplate(options: HtmlTemplateOptions): string {
     nonce,
     extensionUri,
     webviewScript: getWebviewScript(),
+    hasMermaid,
   }
 
   return getCompiledTemplate()(viewData)
 }
+

@@ -140,6 +140,9 @@ export class ContentManager {
     const fontFamily = configService.getFontFamily(document.uri)
     const documentWidth = configService.getDocumentWidth(document.uri)
 
+    // 检查文档中是否包含Mermaid代码块
+    const hasMermaid = content.includes('```mermaid')
+
     logger.info('[updateContent] Generating HTML with theme:', currentTheme)
 
     try {
@@ -149,6 +152,7 @@ export class ContentManager {
         lineHeight,
         fontFamily,
         documentWidth,
+        hasMermaid,
       })
     }
     catch (error) {
@@ -164,6 +168,7 @@ export class ContentManager {
           lineHeight,
           fontFamily,
           documentWidth,
+          hasMermaid,
         })
       }
       catch (fallbackError) {
@@ -209,6 +214,7 @@ export class ContentManager {
     lineHeight: number
     fontFamily: string
     documentWidth: string
+    hasMermaid: boolean
   }): string {
     const nonce = this.getNonce()
     const themeRenderer = this._themeManager.getThemeRenderer()
@@ -225,6 +231,7 @@ export class ContentManager {
       nonce,
       extensionUri: '', // 将在主类中设置
       documentWidth: config.documentWidth,
+      hasMermaid: config.hasMermaid,
     })
   }
 

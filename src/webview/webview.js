@@ -194,12 +194,6 @@ window.addEventListener('message', (event) => {
     }
   }
 
-  // 处理 Mermaid 初始化命令
-  if (message.command === 'initMermaid') {
-    console.log('收到 initMermaid 命令，开始初始化 Mermaid...')
-    initMermaid()
-  }
-
   // 处理 Mermaid 开关变化
   if (message.command === 'toggleMermaid') {
     const enableMermaid = message.enabled
@@ -220,22 +214,6 @@ window.addEventListener('message', (event) => {
     }
   }
 })
-
-// 初始检查是否需要加载 Mermaid
-function checkInitialMermaidState() {
-  // 通知扩展检查是否需要启用 Mermaid
-  vscode.postMessage({
-    command: 'checkMermaidState',
-  })
-}
-
-// 等待 DOM 加载完成后检查初始状态
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', checkInitialMermaidState)
-}
-else {
-  checkInitialMermaidState()
-}
 
 // 滚动同步 - 优化版本，带防抖、阈值控制和缓存
 let isScrollingFromEditor = false

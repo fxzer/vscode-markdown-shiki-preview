@@ -74,17 +74,6 @@ export class MarkdownPreviewProvider implements vscode.WebviewPanelSerializer {
             case 'scroll':
               this._scrollSyncManager.handlePreviewScroll(message.scrollPercentage, message.source, message.timestamp)
               break
-            case 'checkMermaidState':
-            // WebView 请求检查 Mermaid 初始状态
-            { const enableMermaid = configService.getEnableMermaid(this._contentManager.getCurrentDocument()?.uri)
-              const hasMermaidBlocks = this._contentManager.getCurrentDocument()?.getText().includes('```mermaid') || false
-
-              if (enableMermaid && hasMermaidBlocks) {
-                this._panel?.webview.postMessage({
-                  command: 'initMermaid',
-                })
-              }
-              break }
           }
         },
         undefined,
@@ -142,18 +131,6 @@ export class MarkdownPreviewProvider implements vscode.WebviewPanelSerializer {
           case 'scroll':
             this._scrollSyncManager.handlePreviewScroll(message.scrollPercentage, message.source, message.timestamp)
             break
-          case 'checkMermaidState': {
-            // WebView 请求检查 Mermaid 初始状态
-            const enableMermaid = configService.getEnableMermaid(this._contentManager.getCurrentDocument()?.uri)
-            const hasMermaidBlocks = this._contentManager.getCurrentDocument()?.getText().includes('```mermaid') || false
-
-            if (enableMermaid && hasMermaidBlocks) {
-              this._panel?.webview.postMessage({
-                command: 'initMermaid',
-              })
-            }
-            break
-          }
         }
       },
       undefined,
