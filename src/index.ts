@@ -23,7 +23,7 @@ async function showEnhancedThemePicker(provider: MarkdownPreviewProvider): Promi
   const darkThemes: { label: string; theme: string }[] = []
   
   allThemeData.forEach(t => {
-    const themeInfo = { label: t.displayName, theme: t.name as string }
+    const themeInfo = { label: (t.displayName as string) || (t.name as string), theme: t.name as string }
     if (t.type === 'light') {
       lightThemes.push(themeInfo)
     } else if (t.type === 'dark') {

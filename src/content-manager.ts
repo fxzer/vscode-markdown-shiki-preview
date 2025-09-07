@@ -15,13 +15,14 @@ export class ContentManager {
   private _themeManager: any // 将在构造函数中设置类型
   private lastUpdateDocumentUri: string | undefined // 记录最后更新的文档URI
   private lastUpdateConfig: string = '' // 记录最后更新的配置
+  private lastUpdateContentHash: string = '' // 记录最后更新的文档内容哈希
   private debouncedUpdateContent: ReturnType<typeof debounce>
 
   constructor(themeManager: any) {
     this._themeManager = themeManager
 
     // 初始化 lodash 防抖函数
-    this.debouncedUpdateContent = debounce(this.performContentUpdate.bind(this), 300)
+    this.debouncedUpdateContent = debounce(this.performContentUpdate.bind(this), 400)
   }
 
   /**
@@ -39,6 +40,19 @@ export class ContentManager {
   }
 
   /**
+   * 计算文档内容的简单哈希值
+   */
+  private getContentHash(content: string): string {
+    let hash = 0
+    for (let i = 0; i < content.length; i++) {
+      const char = content.charCodeAt(i)
+      hash = ((hash << 5) - hash) + char
+      hash = hash & hash // 转换为32位整数
+    }
+    return hash.toString()
+  }
+
+  /**
    * 更新内容（带防抖）
    */
   public updateContentDebounced(document: vscode.TextDocument): void {
@@ -49,6 +63,20 @@ export class ContentManager {
    * 直接更新内容
    */
   public async updateContent(document: vscode.TextDocument): Promise<void> {
+    await this.performUpdateContent(document, false)
+  }
+
+  /**
+   * 强制更新内容（跳过内容哈希检查）
+   */
+  public async forceUpdateContent(document: vscode.TextDocument): Promise<void> {
+    await this.performUpdateContent(document, true)
+  }
+
+  /**
+   * 执行内容更新的内部方法
+   */
+  private async performUpdateContent(document: vscode.TextDocument, force: boolean = false): Promise<void> {
     if (!this._panel) {
       return
     }
@@ -66,6 +94,9 @@ export class ContentManager {
     const parsed = matter.default(rawContent)
     const content = parsed.content // 只使用内容部分，忽略元数据
 
+    // 计算内容哈希
+    const contentHash = this.getContentHash(rawContent)
+
     // 获取当前配置的字符串表示，用于比较配置是否变化
     const currentConfig = JSON.stringify({
       theme: this._themeManager.getCurrentTheme(),
@@ -81,12 +112,19 @@ export class ContentManager {
     logger.info('[updateContent] documentUri:', documentUri)
     logger.info('[updateContent] lastUpdateConfig:', this.lastUpdateConfig)
     logger.info('[updateContent] currentConfig:', currentConfig)
+    logger.info('[updateContent] lastUpdateContentHash:', this.lastUpdateContentHash)
+    logger.info('[updateContent] contentHash:', contentHash)
     logger.info('[updateContent] Front matter data:', parsed.data)
     logger.info('[updateContent] Content length:', content.length)
 
     // 避免不必要的重复渲染，但如果面板刚刚重新打开，强制更新
-    if (this.lastUpdateDocumentUri === documentUri && this.lastUpdateConfig === currentConfig && this._panel) {
-      logger.info('[updateContent] Skipping update - same document and config')
+    // 现在检查文档URI、配置和内容哈希
+    if (!force && 
+        this.lastUpdateDocumentUri === documentUri && 
+        this.lastUpdateConfig === currentConfig && 
+        this.lastUpdateContentHash === contentHash && 
+        this._panel) {
+      logger.info('[updateContent] Skipping update - same document, config and content')
       return
     }
 
@@ -139,6 +177,7 @@ export class ContentManager {
     this._themeManager.resetThemeChanged()
     this.lastUpdateDocumentUri = documentUri
     this.lastUpdateConfig = currentConfig
+    this.lastUpdateContentHash = contentHash
     logger.info('[updateContent] HTML updated and _themeChanged reset to false')
   }
 
@@ -152,8 +191,8 @@ export class ContentManager {
       // 确保文档仍然是活动的
       const activeEditor = vscode.window.activeTextEditor
       if (activeEditor && activeEditor.document.uri.toString() === documentUri) {
-        await this.updateContent(document)
-        this.lastUpdateDocumentUri = documentUri
+        // 强制更新内容，跳过内容哈希检查
+        await this.forceUpdateContent(document)
       }
     }
     catch (error) {
@@ -222,6 +261,7 @@ export class ContentManager {
   public clearLastUpdateDocumentUri(): void {
     this.lastUpdateDocumentUri = undefined
     this.lastUpdateConfig = ''
+    this.lastUpdateContentHash = ''
   }
 
   /**
@@ -235,6 +275,7 @@ export class ContentManager {
     this._panel = undefined
     this.lastUpdateDocumentUri = undefined
     this.lastUpdateConfig = ''
+    this.lastUpdateContentHash = ''
   }
 
   /**
@@ -243,6 +284,7 @@ export class ContentManager {
   public resetState(): void {
     this.lastUpdateDocumentUri = undefined
     this.lastUpdateConfig = ''
+    this.lastUpdateContentHash = ''
     this.debouncedUpdateContent.cancel()
   }
 }
