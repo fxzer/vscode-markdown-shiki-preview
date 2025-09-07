@@ -39,7 +39,7 @@ export class ThemeManager {
     })
 
     // 集成 KaTeX 数学公式支持
-    this._md.use(katex)
+    this._md.use(katex, { strict: false })
 
     // 集成自定义容器支持
     this._md.use(container, {
