@@ -155,4 +155,3 @@ export function generateHtmlTemplate(options: HtmlTemplateOptions): string {
 
   return getCompiledTemplate()(viewData)
 }
-

@@ -3,7 +3,7 @@ import { container } from '@mdit/plugin-container'
 import { katex } from '@mdit/plugin-katex'
 import * as matter from 'gray-matter'
 import MarkdownIt from 'markdown-it'
-import { bundledLanguages, bundledThemes, createHighlighter } from 'shiki'
+import { createHighlighter } from 'shiki'
 import * as vscode from 'vscode'
 import { configService } from './config-service'
 import { generateHtmlTemplate } from './html-template'
@@ -160,7 +160,7 @@ export class ThemeManager {
         return `</div>
 </details>
 `
-      }
+      },
     })
 
     this.initializeHighlighter()
@@ -187,8 +187,21 @@ export class ThemeManager {
     try {
       // 定义一个默认加载的语言子集，以加快初始化速度
       const defaultLangs = [
-        'markdown', 'md', 'javascript', 'js', 'typescript', 'ts',
-        'json', 'html', 'css', 'python', 'py', 'bash', 'shell', 'sh', 'yaml',
+        'markdown',
+        'md',
+        'javascript',
+        'js',
+        'typescript',
+        'ts',
+        'json',
+        'html',
+        'css',
+        'python',
+        'py',
+        'bash',
+        'shell',
+        'sh',
+        'yaml',
       ]
 
       // 确保默认主题和用户配置的主题被初始加载

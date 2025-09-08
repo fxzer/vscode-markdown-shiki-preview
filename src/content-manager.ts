@@ -109,9 +109,9 @@ export class ContentManager {
     // 避免不必要的重复渲染
     // 检查配置和内容哈希
     if (!force
-        && this.lastUpdateDocumentUri === documentUri
-        && this.lastUpdateConfig === currentConfig
-        && this.lastUpdateContentHash === contentHash) {
+      && this.lastUpdateDocumentUri === documentUri
+      && this.lastUpdateConfig === currentConfig
+      && this.lastUpdateContentHash === contentHash) {
       logger.info('[updateContent] Skipping update - same document, config and content')
       return
     }

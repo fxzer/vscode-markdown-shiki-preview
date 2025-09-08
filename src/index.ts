@@ -1,4 +1,4 @@
-import { defineExtension, useCommand, useLogger } from 'reactive-vscode'
+import { defineExtension, useLogger } from 'reactive-vscode'
 import { bundledThemes } from 'shiki'
 import { window, workspace } from 'vscode'
 import * as vscode from 'vscode'
@@ -19,18 +19,19 @@ async function showEnhancedThemePicker(provider: MarkdownPreviewProvider): Promi
   const loadedThemes = await Promise.all(themePromises)
   const allThemeData = loadedThemes.map(t => t.default)
 
-  const lightThemes: { label: string; theme: string }[] = []
-  const darkThemes: { label: string; theme: string }[] = []
-  
-  allThemeData.forEach(t => {
+  const lightThemes: { label: string, theme: string }[] = []
+  const darkThemes: { label: string, theme: string }[] = []
+
+  allThemeData.forEach((t) => {
     const themeInfo = { label: (t.displayName as string) || (t.name as string), theme: t.name as string }
     if (t.type === 'light') {
       lightThemes.push(themeInfo)
-    } else if (t.type === 'dark') {
+    }
+    else if (t.type === 'dark') {
       darkThemes.push(themeInfo)
     }
   })
-  
+
   lightThemes.sort((a, b) => a.label.localeCompare(b.label))
   darkThemes.sort((a, b) => a.label.localeCompare(b.label))
 
@@ -39,7 +40,7 @@ async function showEnhancedThemePicker(provider: MarkdownPreviewProvider): Promi
     ...lightThemes,
     { label: 'Dark Themes', theme: '', kind: vscode.QuickPickItemKind.Separator as any },
     ...darkThemes,
-  ] as ThemeQuickPickItem[];
+  ] as ThemeQuickPickItem[]
 
   const currentThemeValue = (currentTheme.value as unknown as string) || 'github-light'
 
@@ -162,7 +163,7 @@ const { activate, deactivate } = defineExtension((ctx) => {
         return
       }
       provider.showPreview(activeEditor.document)
-    })
+    }),
   )
 
   ctx.subscriptions.push(
@@ -173,7 +174,7 @@ const { activate, deactivate } = defineExtension((ctx) => {
       catch (error) {
         window.showErrorMessage(`Failed to load themes: ${error}`)
       }
-    })
+    }),
   )
 
   // 监听活动编辑器变化，自动更新预览内容和滚动同步（带防抖）
