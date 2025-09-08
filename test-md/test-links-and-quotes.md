@@ -12,6 +12,11 @@
 
 [跳转到引用](#引用)
 
+[abc](./test-tables.md)
+
+[index](./index.md)
+[index.md](./index.md)
+
 ## 引用
 
 > 这是第一层引用。

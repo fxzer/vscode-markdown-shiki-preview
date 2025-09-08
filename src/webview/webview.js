@@ -821,27 +821,38 @@ const morphdom = (function () {
 
 // 处理链接点击
 document.addEventListener('click', (event) => {
-  if (event.target.tagName === 'A') {
-    const href = event.target.href
-    const text = event.target.textContent
+  let target = event.target
+  // 处理 <a> 标签内部元素的点击事件，确保我们总能拿到 <a> 元素
+  while (target && target.tagName !== 'A') {
+    target = target.parentElement
+  }
+
+  if (target && target.tagName === 'A') {
+    const hrefAttr = target.getAttribute('href')
+
+    if (!hrefAttr) {
+      return
+    }
 
     // 处理外部链接
-    if (href.startsWith('http')) {
+    if (hrefAttr.startsWith('http://') || hrefAttr.startsWith('https://') || hrefAttr.startsWith('//')) {
       event.preventDefault()
       vscode.postMessage({
         command: 'openExternal',
-        url: href,
+        url: hrefAttr,
       })
     }
     // 处理相对路径链接（.md文件）
-    else if (text && text.includes('.md')) {
+    else if (hrefAttr.endsWith('.md')) {
       event.preventDefault()
       vscode.postMessage({
         command: 'openRelativeFile',
-        filePath: text,
-        href,
+        // 关键修复：使用 href 属性值作为文件路径
+        filePath: hrefAttr,
+        href: hrefAttr, // 保持消息结构一致性
       })
     }
+    // 此处可以添加对锚点链接 # 的处理，如果需要的话
   }
 })
 

@@ -287,7 +287,7 @@ export class MarkdownPreviewProvider implements vscode.WebviewPanelSerializer {
   }
 
   // 处理相对路径文件点击
-  private async handleRelativeFileClick(filePath: string, href: string) {
+  private async handleRelativeFileClick(filePath: string) {
     try {
       const currentDocument = this._contentManager.getCurrentDocument()
       if (!currentDocument) {
@@ -302,14 +302,15 @@ export class MarkdownPreviewProvider implements vscode.WebviewPanelSerializer {
       // 检查文件是否存在
       try {
         await vscode.workspace.fs.stat(targetFile)
-      } catch (error) {
+      }
+      catch {
         vscode.window.showErrorMessage(`文件不存在: ${filePath}`)
         return
       }
 
       // 打开文件
       const document = await vscode.workspace.openTextDocument(targetFile)
-      const editor = await vscode.window.showTextDocument(document, vscode.ViewColumn.One)
+      // const editor = await vscode.window.showTextDocument(document, vscode.ViewColumn.One)
 
       // 如果预览窗口存在，切换到新文档
       if (this._panel) {
@@ -317,7 +318,8 @@ export class MarkdownPreviewProvider implements vscode.WebviewPanelSerializer {
       }
 
       logger.info(`已打开相对路径文件: ${filePath}`)
-    } catch (error) {
+    }
+    catch (error) {
       logger.error('处理相对路径文件点击时出错:', error)
       vscode.window.showErrorMessage(`无法打开文件: ${filePath}`)
     }
