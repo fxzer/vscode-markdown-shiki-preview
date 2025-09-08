@@ -1,9 +1,9 @@
 {
-  "publisher": "fxzer",
+  "publisher": "fxzer8888",
   "name": "vscode-markdown-shiki-preview",
   "displayName": " VSCode Markdown Shiki Preview",
   "type": "module",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "private": true,
   "packageManager": "pnpm@10.15.1",
   "description": "A VSCode extension for previewing Markdown files with enhanced theme switching, keyboard navigation, and real-time preview",
@@ -51,8 +51,8 @@
         "title": "Open Markdown Preview",
         "category": "VSCode Markdown Shiki Preview",
         "icon": {
-          "light": "res/preview.svg",
-          "dark": "res/preview.svg"
+          "light": "res/icon.svg",
+          "dark": "res/icon.svg"
         }
       },
       {
