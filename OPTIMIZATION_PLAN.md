@@ -53,10 +53,16 @@
 
 打磨产品细节，提升用户的综合使用感受。
 
-- [ ] **功能点**: **增加加载状态提示**
+- [x] **功能点**: **增加加载状态提示**
     - **现状与问题**: 首次打开预览或处理大型文件时，预览窗口可能会短暂显示为空白。
-    - **优化方案**: 在 Webview 的 HTML 模板中，默认包含一个加载指示器（如 CSS spinner）。当后台正在进行 Markdown 渲染时，显示该指示器。渲染完成后，通过 `postMessage` 通知 Webview 脚本隐藏加载动画并显示内容。
-    - **预期收益**: 提供积极的用户反馈，避免了白屏带来的困惑。
+    - **优化方案**: 使用 VSCode 原生的 Progress API (`vscode.window.withProgress`) 来显示加载指示器，而不是自定义的 CSS 动画。这样可以与 VSCode 的整体 UI 风格保持一致，并提供更好的用户体验。
+    - **预期收益**: 提供积极的用户反馈，避免了白屏带来的困惑，同时与 VSCode 原生 UI 保持一致。
+    - **完成状态**: 已于 2025-01-27 完成。实现方式为：
+        1. 移除了自定义的 CSS loading 动画和 HTML 元素
+        2. 在 `ContentManager.performUpdateContent` 中使用 `vscode.window.withProgress` API 显示原生加载指示器
+        3. 在 `PreviewProvider.updateTheme` 中也使用 Progress API 显示主题切换进度
+        4. 提供了详细的进度报告，包括"准备渲染内容"、"初始化语法高亮器"、"渲染 Markdown 内容"等步骤
+        5. 使用 `ProgressLocation.Window` 在编辑器状态栏显示进度条，实现从左向右移动的短线加载动画效果
 
 - [ ] **功能点**: **在预览中优雅地显示错误**
     - **现状与问题**: 如果 Mermaid 语法错误或主题加载失败，错误信息主要输出在开发控制台中，普通用户难以察觉。

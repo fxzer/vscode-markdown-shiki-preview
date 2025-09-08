@@ -62,26 +62,50 @@ export class ContentManager {
   /**
    * 直接更新内容
    */
-  public async updateContent(document: vscode.TextDocument): Promise<void> {
-    await this.performUpdateContent(document, false)
+  public async updateContent(document: vscode.TextDocument, showProgress: boolean = true): Promise<void> {
+    await this.performUpdateContent(document, false, showProgress)
   }
 
   /**
    * 强制更新内容（跳过内容哈希检查）
    */
-  public async forceUpdateContent(document: vscode.TextDocument): Promise<void> {
-    await this.performUpdateContent(document, true)
+  public async forceUpdateContent(document: vscode.TextDocument, showProgress: boolean = true): Promise<void> {
+    await this.performUpdateContent(document, true, showProgress)
   }
 
   /**
    * 执行内容更新的内部方法
    */
-  private async performUpdateContent(document: vscode.TextDocument, force: boolean = false): Promise<void> {
+  private async performUpdateContent(document: vscode.TextDocument, force: boolean = false, showProgress: boolean = true): Promise<void> {
     if (!this._panel) {
       return
     }
 
+    // 根据参数决定是否显示进度条
+    if (showProgress) {
+      // 使用 VSCode 原生 Progress API 显示加载指示器
+      return vscode.window.withProgress({
+        location: vscode.ProgressLocation.Window,
+        title: '正在更新 Markdown 预览...',
+        cancellable: false,
+      }, async (progress) => {
+        return this.executeContentUpdate(document, force, progress)
+      })
+    }
+    else {
+      // 不显示进度条，直接执行更新
+      return this.executeContentUpdate(document, force, null)
+    }
+  }
+
+  /**
+   * 执行实际的内容更新逻辑
+   */
+  private async executeContentUpdate(document: vscode.TextDocument, force: boolean, progress: vscode.Progress<{ message?: string, increment?: number }> | null): Promise<void> {
+    progress?.report({ increment: 0, message: '准备渲染内容...' })
+
     // 确保高亮器已初始化
+    progress?.report({ increment: 20, message: '初始化语法高亮器...' })
     await this._themeManager.ensureHighlighterInitialized()
 
     // 设置当前文档
@@ -117,15 +141,18 @@ export class ContentManager {
     }
 
     // 验证并修复当前主题
+    progress?.report({ increment: 30, message: '验证主题配置...' })
     const currentTheme = this._themeManager.validateAndFixTheme()
 
     // 异步渲染Markdown
+    progress?.report({ increment: 40, message: '渲染 Markdown 内容...' })
     const htmlContent = await this._themeManager.renderMarkdown(content)
 
     // 如果不是强制更新（即只是内容变化），则发送增量更新消息
     if (!force && this.lastUpdateDocumentUri === documentUri) {
       logger.info('[updateContent] Sending incremental update to webview')
-      this._panel.webview.postMessage({
+      progress?.report({ increment: 80, message: '更新预览内容...' })
+      this._panel?.webview.postMessage({
         command: 'update-content',
         html: htmlContent,
       })
@@ -133,6 +160,8 @@ export class ContentManager {
     else {
       // 否则，执行完整的HTML更新
       logger.info('[updateContent] Performing full HTML update')
+      progress?.report({ increment: 60, message: '生成完整 HTML...' })
+
       // 使用配置服务获取所有配置
       const fontSize = configService.getFontSize(document.uri)
       const lineHeight = configService.getLineHeight(document.uri)
@@ -145,14 +174,17 @@ export class ContentManager {
       logger.info('[updateContent] Generating HTML with theme:', currentTheme)
 
       try {
-        this._panel.webview.html = this.getHtmlForWebview(htmlContent, {
-          theme: currentTheme,
-          fontSize,
-          lineHeight,
-          fontFamily,
-          documentWidth,
-          hasMermaid,
-        })
+        progress?.report({ increment: 80, message: '应用主题和样式...' })
+        if (this._panel) {
+          this._panel.webview.html = this.getHtmlForWebview(htmlContent, {
+            theme: currentTheme,
+            fontSize,
+            lineHeight,
+            fontFamily,
+            documentWidth,
+            hasMermaid,
+          })
+        }
       }
       catch (error) {
         logger.error('生成 HTML 预览失败:', error)
@@ -161,23 +193,28 @@ export class ContentManager {
         // 尝试使用默认主题重新生成
         try {
           logger.info('尝试使用默认主题重新生成预览')
-          this._panel.webview.html = this.getHtmlForWebview(htmlContent, {
-            theme: 'vitesse-dark',
-            fontSize,
-            lineHeight,
-            fontFamily,
-            documentWidth,
-            hasMermaid,
-          })
+          if (this._panel) {
+            this._panel.webview.html = this.getHtmlForWebview(htmlContent, {
+              theme: 'vitesse-dark',
+              fontSize,
+              lineHeight,
+              fontFamily,
+              documentWidth,
+              hasMermaid,
+            })
+          }
         }
         catch (fallbackError) {
           logger.error('默认主题也失败:', fallbackError)
-          this._panel.webview.html = `<html><body><h2>预览生成失败</h2><p>错误: ${error instanceof Error ? error.message : '未知错误'}</p></body></html>`
+          if (this._panel) {
+            this._panel.webview.html = `<html><body><h2>预览生成失败</h2><p>错误: ${error instanceof Error ? error.message : '未知错误'}</p></body></html>`
+          }
         }
       }
     }
 
     // 更新缓存状态
+    progress?.report({ increment: 100, message: '完成更新' })
     this.lastUpdateDocumentUri = documentUri
     this.lastUpdateConfig = currentConfig
     this.lastUpdateContentHash = contentHash

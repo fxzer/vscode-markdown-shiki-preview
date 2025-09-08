@@ -97,13 +97,30 @@ export class MarkdownPreviewProvider implements vscode.WebviewPanelSerializer {
       })
     }
 
-    // 设置当前文档到各个管理器
-    this._themeManager.setCurrentDocument(document)
-    this._contentManager.setCurrentDocument(document)
+    // 首次创建面板时显示原生 loading 状态
+    await vscode.window.withProgress({
+      location: vscode.ProgressLocation.Window,
+      title: '正在初始化 Markdown 预览...',
+      cancellable: false,
+    }, async (progress) => {
+      progress.report({ increment: 0, message: '创建预览面板...' })
 
-    // 更新内容和设置滚动同步
-    await this._contentManager.updateContent(document)
-    this._scrollSyncManager.setupScrollSync(document)
+      // 设置当前文档到各个管理器
+      progress.report({ increment: 20, message: '初始化管理器...' })
+      this._themeManager.setCurrentDocument(document)
+      this._contentManager.setCurrentDocument(document)
+
+      // 更新内容和设置滚动同步
+      progress.report({ increment: 40, message: '加载预览内容...' })
+      await this._contentManager.updateContent(document, false) // 不显示进度条，因为外层已经有进度条了
+
+      progress.report({ increment: 80, message: '设置滚动同步...' })
+      this._scrollSyncManager.setupScrollSync(document)
+
+      progress.report({ increment: 100, message: '初始化完成' })
+    })
+
+    // 设置面板标题
     this.updatePanelTitle(document)
   }
 
@@ -246,7 +263,15 @@ export class MarkdownPreviewProvider implements vscode.WebviewPanelSerializer {
 
   // 更新主题
   async updateTheme(theme: string) {
-    await this._themeManager.updateTheme(theme)
+    return vscode.window.withProgress({
+      location: vscode.ProgressLocation.Window,
+      title: '正在切换主题...',
+      cancellable: false,
+    }, async (progress) => {
+      progress.report({ increment: 0, message: '应用新主题...' })
+      await this._themeManager.updateTheme(theme)
+      progress.report({ increment: 100, message: '主题切换完成' })
+    })
   }
 
   /**
