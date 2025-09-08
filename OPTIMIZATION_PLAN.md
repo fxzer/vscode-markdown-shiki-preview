@@ -10,7 +10,7 @@
 
 提升扩展的响应速度和资源利用效率。
 
-- [ ] **功能点**: **引入 DOM Diffing 机制，实现增量更新**
+- [x] **功能点**: **引入 DOM Diffing 机制，实现增量更新**
     - **现状与问题**: 每次内容变更时，整个 Webview 的 `innerHTML` 会被完全替换。这在频繁编辑或处理大型文件时，会导致不必要的浏览器重绘/重排，有时会引起预览闪烁。
     - **优化方案**:
         1.  改造 `ContentManager`，当内容更新时，不再生成完整的 HTML 文档，而是只通过 `postMessage` 将渲染后的核心 HTML *内容片段* 发送到 Webview 脚本。
@@ -26,7 +26,7 @@
     - **预期收益**: 加快扩展的激活速度，降低初始内存消耗。
     - **完成状态**: 已于 2025-09-07 完成。实现方式为：初始化时仅加载 `coreLangs` 和 `coreThemes` 数组中定义的核心集。在 `updateTheme` 和 `highlight` 函数中加入了动态 `loadTheme`/`loadLanguage` 的逻辑。
 
-- [ ] **功能点**: **Mermaid.js 的条件加载**
+- [x] **功能点**: **Mermaid.js 的条件加载**
     - **现状与问题**: 无论当前文档是否包含 Mermaid 图表，`mermaid.js` 脚本都会被注入到 HTML 模板中。
     - **优化方案**: 在 `ContentManager` 渲染 HTML 前，先快速扫描文档内容是否包含 ` ```mermaid ` 代码块。只有在包含的情况下，才在最终生成的 HTML 中加入 `mermaid.js` 的 `<script>` 标签。
     - **预期收益**: 对于不含图表的文档，减少了不必要的 JavaScript 解析和执行开销。

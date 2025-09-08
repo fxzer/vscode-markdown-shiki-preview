@@ -266,20 +266,27 @@ export class MarkdownPreviewProvider implements vscode.WebviewPanelSerializer {
     )
 
     // 监听非主题配置的变化
-    const nonThemeKeys: (keyof ReturnType<typeof configService.getAllConfigs>)[] = [
-      'documentWidth',
-      'fontSize',
-      'lineHeight',
-      'fontFamily',
-    ]
+    const styleConfigMapping: Record<string, string> = {
+      documentWidth: '--document-width',
+      fontSize: '--font-size',
+      lineHeight: '--line-height',
+      fontFamily: '--font-family',
+    }
 
-    nonThemeKeys.forEach((key) => {
+    Object.entries(styleConfigMapping).forEach(([configKey, cssVar]) => {
       disposables.push(
-        configService.onConfigChange(key, () => {
-          if (this._panel && this._contentManager.getCurrentDocument()) {
-            logger.info(`配置 ${key} 发生变化，强制更新预览内容`)
-            // 直接更新内容
-            this.updateContent(this._contentManager.getCurrentDocument()!)
+        configService.onConfigChange(configKey as any, (newValue) => {
+          if (this._panel) {
+            logger.info(`样式配置 ${configKey} 发生变化，发送样式更新消息`)
+            let cssValue = String(newValue)
+            if (configKey === 'fontSize') {
+              cssValue += 'px'
+            }
+            this._panel.webview.postMessage({
+              command: 'update-style',
+              key: cssVar,
+              value: cssValue,
+            })
           }
         }),
       )

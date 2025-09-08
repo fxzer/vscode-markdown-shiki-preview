@@ -230,6 +230,7 @@
     "lodash-es": "^4.17.21",
     "markdown-it": "^14.1.0",
     "mermaid": "^11.11.0",
+    "morphdom": "^2.7.7",
     "shiki": "^3.12.2"
   },
   "devDependencies": {

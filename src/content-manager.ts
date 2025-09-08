@@ -106,24 +106,12 @@ export class ContentManager {
       documentWidth: configService.getDocumentWidth(document.uri),
     })
 
-    logger.info('[updateContent] _themeChanged:', this._themeManager.hasThemeChanged())
-    logger.info('[updateContent] _currentShikiTheme:', this._themeManager.getCurrentTheme())
-    logger.info('[updateContent] lastUpdateDocumentUri:', this.lastUpdateDocumentUri)
-    logger.info('[updateContent] documentUri:', documentUri)
-    logger.info('[updateContent] lastUpdateConfig:', this.lastUpdateConfig)
-    logger.info('[updateContent] currentConfig:', currentConfig)
-    logger.info('[updateContent] lastUpdateContentHash:', this.lastUpdateContentHash)
-    logger.info('[updateContent] contentHash:', contentHash)
-    logger.info('[updateContent] Front matter data:', parsed.data)
-    logger.info('[updateContent] Content length:', content.length)
-
-    // 避免不必要的重复渲染，但如果面板刚刚重新打开，强制更新
-    // 现在检查文档URI、配置和内容哈希
+    // 避免不必要的重复渲染
+    // 检查配置和内容哈希
     if (!force
         && this.lastUpdateDocumentUri === documentUri
         && this.lastUpdateConfig === currentConfig
-        && this.lastUpdateContentHash === contentHash
-        && this._panel) {
+        && this.lastUpdateContentHash === contentHash) {
       logger.info('[updateContent] Skipping update - same document, config and content')
       return
     }
@@ -131,39 +119,34 @@ export class ContentManager {
     // 验证并修复当前主题
     const currentTheme = this._themeManager.validateAndFixTheme()
 
-    // 异步渲染Markdown，处理语言按需加载
-    const html = await this._themeManager.renderMarkdown(content)
+    // 异步渲染Markdown
+    const htmlContent = await this._themeManager.renderMarkdown(content)
 
-    // 使用配置服务获取所有配置
-    const fontSize = configService.getFontSize(document.uri)
-    const lineHeight = configService.getLineHeight(document.uri)
-    const fontFamily = configService.getFontFamily(document.uri)
-    const documentWidth = configService.getDocumentWidth(document.uri)
-
-    // 检查文档中是否包含Mermaid代码块
-    const hasMermaid = content.includes('```mermaid')
-
-    logger.info('[updateContent] Generating HTML with theme:', currentTheme)
-
-    try {
-      this._panel.webview.html = this.getHtmlForWebview(html, {
-        theme: currentTheme,
-        fontSize,
-        lineHeight,
-        fontFamily,
-        documentWidth,
-        hasMermaid,
+    // 如果不是强制更新（即只是内容变化），则发送增量更新消息
+    if (!force && this.lastUpdateDocumentUri === documentUri) {
+      logger.info('[updateContent] Sending incremental update to webview')
+      this._panel.webview.postMessage({
+        command: 'update-content',
+        html: htmlContent,
       })
     }
-    catch (error) {
-      logger.error('生成 HTML 预览失败:', error)
-      vscode.window.showErrorMessage('生成预览内容失败，请检查主题配置')
+    else {
+      // 否则，执行完整的HTML更新
+      logger.info('[updateContent] Performing full HTML update')
+      // 使用配置服务获取所有配置
+      const fontSize = configService.getFontSize(document.uri)
+      const lineHeight = configService.getLineHeight(document.uri)
+      const fontFamily = configService.getFontFamily(document.uri)
+      const documentWidth = configService.getDocumentWidth(document.uri)
 
-      // 尝试使用默认主题重新生成
+      // 检查文档中是否包含Mermaid代码块
+      const hasMermaid = content.includes('```mermaid')
+
+      logger.info('[updateContent] Generating HTML with theme:', currentTheme)
+
       try {
-        logger.info('尝试使用默认主题重新生成预览')
-        this._panel.webview.html = this.getHtmlForWebview(html, {
-          theme: 'vitesse-dark',
+        this._panel.webview.html = this.getHtmlForWebview(htmlContent, {
+          theme: currentTheme,
           fontSize,
           lineHeight,
           fontFamily,
@@ -171,17 +154,35 @@ export class ContentManager {
           hasMermaid,
         })
       }
-      catch (fallbackError) {
-        logger.error('默认主题也失败:', fallbackError)
-        this._panel.webview.html = `<html><body><h2>预览生成失败</h2><p>错误: ${error instanceof Error ? error.message : '未知错误'}</p></body></html>`
+      catch (error) {
+        logger.error('生成 HTML 预览失败:', error)
+        vscode.window.showErrorMessage('生成预览内容失败，请检查主题配置')
+
+        // 尝试使用默认主题重新生成
+        try {
+          logger.info('尝试使用默认主题重新生成预览')
+          this._panel.webview.html = this.getHtmlForWebview(htmlContent, {
+            theme: 'vitesse-dark',
+            fontSize,
+            lineHeight,
+            fontFamily,
+            documentWidth,
+            hasMermaid,
+          })
+        }
+        catch (fallbackError) {
+          logger.error('默认主题也失败:', fallbackError)
+          this._panel.webview.html = `<html><body><h2>预览生成失败</h2><p>错误: ${error instanceof Error ? error.message : '未知错误'}</p></body></html>`
+        }
       }
     }
 
-    // 重置主题更改标志，表示已经完成渲染
-    this._themeManager.resetThemeChanged()
+    // 更新缓存状态
     this.lastUpdateDocumentUri = documentUri
     this.lastUpdateConfig = currentConfig
     this.lastUpdateContentHash = contentHash
+    // 重置主题更改标志，表示已经完成渲染
+    this._themeManager.resetThemeChanged()
     logger.info('[updateContent] HTML updated and _themeChanged reset to false')
   }
 
@@ -196,7 +197,7 @@ export class ContentManager {
       const activeEditor = vscode.window.activeTextEditor
       if (activeEditor && activeEditor.document.uri.toString() === documentUri) {
         // 强制更新内容，跳过内容哈希检查
-        await this.forceUpdateContent(document)
+        await this.updateContent(document)
       }
     }
     catch (error) {
