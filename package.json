@@ -2,6 +2,7 @@
   "publisher": "fxzer",
   "name": "vscode-markdown-shiki-preview",
   "displayName": " VSCode Markdown Shiki Preview",
+  "type": "module",
   "version": "1.0.0",
   "private": true,
   "packageManager": "pnpm@10.15.1",
@@ -30,7 +31,7 @@
     "Other",
     "Themes"
   ],
-  "main": "./dist/index.js",
+  "main": "./dist/index.cjs",
   "icon": "res/icon.png",
   "files": [
     "LICENSE.md",
@@ -242,7 +243,7 @@
     "@types/vscode": "^1.103.0",
     "@vscode/vsce": "^3.6.0",
     "bumpp": "^10.2.3",
-    "eslint": "^9.34.0",
+    "eslint": "^9.35.0",
     "esno": "^4.8.0",
     "handlebars": "^4.7.8",
     "ovsx": "^0.10.5",
