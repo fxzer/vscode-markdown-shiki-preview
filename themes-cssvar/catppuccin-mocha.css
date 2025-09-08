@@ -1,15 +1,15 @@
-/* 主题: vitesse-dark - 频率最高的变量 */
+/* 主题: catppuccin-mocha - 频率最高的变量 */
 :root {
-  --editor-background: #121212; /* 95.0% */
-  --editor-foreground: #dbd7caee; /* 95.0% */
-  --activityBar-background: #121212; /* 91.7% */
-  --button-background: #4d9375; /* 91.7% */
-  --focusBorder: #00000000; /* 91.7% */
-  --list-activeSelectionBackground: #181818; /* 91.7% */
-  --list-hoverBackground: #181818; /* 91.7% */
-  --statusBar-background: #121212; /* 91.7% */
-  --titleBar-activeBackground: #121212; /* 91.7% */
-  --activityBarBadge-background: #bfbaaa; /* 90.0% */
+  --editor-background: #1e1e2e; /* 95.0% */
+  --editor-foreground: #cdd6f4; /* 95.0% */
+  --activityBar-background: #11111b; /* 91.7% */
+  --button-background: #cba6f7; /* 91.7% */
+  --focusBorder: #cba6f7; /* 91.7% */
+  --list-activeSelectionBackground: #313244; /* 91.7% */
+  --list-hoverBackground: #31324480; /* 91.7% */
+  --statusBar-background: #11111b; /* 91.7% */
+  --titleBar-activeBackground: #11111b; /* 91.7% */
+  --activityBarBadge-background: #cba6f7; /* 90.0% */
 }
 
 /* 变量说明：

@@ -1,15 +1,15 @@
-/* 主题: vitesse-dark - 频率最高的变量 */
+/* 主题: tokyo-night - 频率最高的变量 */
 :root {
-  --editor-background: #121212; /* 95.0% */
-  --editor-foreground: #dbd7caee; /* 95.0% */
-  --activityBar-background: #121212; /* 91.7% */
-  --button-background: #4d9375; /* 91.7% */
-  --focusBorder: #00000000; /* 91.7% */
-  --list-activeSelectionBackground: #181818; /* 91.7% */
-  --list-hoverBackground: #181818; /* 91.7% */
-  --statusBar-background: #121212; /* 91.7% */
-  --titleBar-activeBackground: #121212; /* 91.7% */
-  --activityBarBadge-background: #bfbaaa; /* 90.0% */
+  --editor-background: #1a1b26; /* 95.0% */
+  --editor-foreground: #a9b1d6; /* 95.0% */
+  --activityBar-background: #16161e; /* 91.7% */
+  --button-background: #3d59a1dd; /* 91.7% */
+  --focusBorder: #545c7e33; /* 91.7% */
+  --list-activeSelectionBackground: #202330; /* 91.7% */
+  --list-hoverBackground: #13131a; /* 91.7% */
+  --statusBar-background: #16161e; /* 91.7% */
+  --titleBar-activeBackground: #16161e; /* 91.7% */
+  --activityBarBadge-background: #3d59a1; /* 90.0% */
 }
 
 /* 变量说明：

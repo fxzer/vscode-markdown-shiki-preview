@@ -1,0 +1,26 @@
+/* 主题: andromeeda - 频率最高的变量 */
+:root {
+  --editor-background: #23262E; /* 95.0% */
+  --editor-foreground: #D5CED9; /* 95.0% */
+  --activityBar-background: #23262E; /* 91.7% */
+  --button-background: #00e8c5cc; /* 91.7% */
+  --focusBorder: #746f77; /* 91.7% */
+  --list-activeSelectionBackground: #23262E; /* 91.7% */
+  --list-hoverBackground: #23262E; /* 91.7% */
+  --statusBar-background: #23262E; /* 91.7% */
+  --titleBar-activeBackground: #23262E; /* 91.7% */
+  --activityBarBadge-background: #00b0ff; /* 90.0% */
+}
+
+/* 变量说明：
+ * --editor-background: editor.background (57/60, 95.0%) - 编辑器主背景色，代码编辑区域的主要背景
+ * --editor-foreground: editor.foreground (57/60, 95.0%) - 编辑器主文本颜色，代码文本、注释、字符串等默认文字颜色
+ * --activityBar-background: activityBar.background (55/60, 91.7%) - 活动栏背景色，左侧文件资源管理器、搜索、源代码管理等图标的背景
+ * --button-background: button.background (55/60, 91.7%) - 按钮背景色，各种按钮、链接按钮的背景色
+ * --focusBorder: focusBorder (55/60, 91.7%) - 焦点边框颜色，当前选中元素的高亮边框
+ * --list-activeSelectionBackground: list.activeSelectionBackground (55/60, 91.7%) - 列表项选中背景色，文件列表、搜索结果等选中项的背景
+ * --list-hoverBackground: list.hoverBackground (55/60, 91.7%) - 列表项悬停背景色，鼠标悬停在文件、搜索结果等上的背景色
+ * --statusBar-background: statusBar.background (55/60, 91.7%) - 状态栏背景色，底部状态栏的背景
+ * --titleBar-activeBackground: titleBar.activeBackground (55/60, 91.7%) - 标题栏激活状态背景色，窗口标题栏的背景色
+ * --activityBarBadge-background: activityBarBadge.background (54/60, 90.0%) - 活动栏徽章背景色，活动栏上的通知徽章、数字标识等
+ */

@@ -454,6 +454,9 @@ const morphdom = (function () {
       indexTree(fromNode)
 
       function handleNodeAdded(el) {
+        if (!el)
+          return
+
         onNodeAdded(el)
 
         let curChild = el.firstChild
@@ -569,8 +572,6 @@ const morphdom = (function () {
             fromNextSibling = curFromNodeChild.nextSibling
 
             if (curToNodeChild.isSameNode && curToNodeChild.isSameNode(curFromNodeChild)) {
-              curToNodeChild = toNextSibling
-              curFromNodeChild = fromNextSibling
               foundMatch = true
               break
             }
@@ -698,7 +699,7 @@ const morphdom = (function () {
           matchingFromEl = fromNodesLookup[curToNodeKey]
           if (curToNodeKey && matchingFromEl && compareNodeNames(matchingFromEl, curToNodeChild)) {
             // MORPH
-            if (!skipFrom) {
+            if (!skipFrom && matchingFromEl && matchingFromEl.nodeType) {
               addChild(fromEl, matchingFromEl)
             }
             morphEl(matchingFromEl, curToNodeChild)
@@ -710,11 +711,13 @@ const morphdom = (function () {
                 curToNodeChild = onBeforeNodeAddedResult
               }
 
-              if (curToNodeChild.actualize) {
+              if (curToNodeChild && curToNodeChild.actualize) {
                 curToNodeChild = curToNodeChild.actualize(fromEl.ownerDocument || doc)
               }
-              addChild(fromEl, curToNodeChild)
-              handleNodeAdded(curToNodeChild)
+              if (curToNodeChild && curToNodeChild.nodeType) {
+                addChild(fromEl, curToNodeChild)
+                handleNodeAdded(curToNodeChild)
+              }
             }
           }
 
@@ -724,7 +727,7 @@ const morphdom = (function () {
           }
           else {
             curToNodeChild = toNextSibling
-            curFromNodeChild = fromNextSibling
+            // Don't advance curFromNodeChild here as it might be needed for the next iteration
           }
         }
 
@@ -798,7 +801,7 @@ const morphdom = (function () {
       }
 
       if (!childrenOnly && morphedNode !== fromNode && fromNode.parentNode) {
-        if (morphedNode.actualize) {
+        if (morphedNode && morphedNode.actualize) {
           morphedNode = morphedNode.actualize(fromNode.ownerDocument || doc)
         }
         // If we had to swap out the from node with a new node because the old
@@ -816,14 +819,29 @@ const morphdom = (function () {
   return morphdomFactory(morphAttrs)
 })()
 
-// 处理外部链接点击
+// 处理链接点击
 document.addEventListener('click', (event) => {
-  if (event.target.tagName === 'A' && event.target.href.startsWith('http')) {
-    event.preventDefault()
-    vscode.postMessage({
-      command: 'openExternal',
-      url: event.target.href,
-    })
+  if (event.target.tagName === 'A') {
+    const href = event.target.href
+    const text = event.target.textContent
+
+    // 处理外部链接
+    if (href.startsWith('http')) {
+      event.preventDefault()
+      vscode.postMessage({
+        command: 'openExternal',
+        url: href,
+      })
+    }
+    // 处理相对路径链接（.md文件）
+    else if (text && text.includes('.md')) {
+      event.preventDefault()
+      vscode.postMessage({
+        command: 'openRelativeFile',
+        filePath: text,
+        href,
+      })
+    }
   }
 })
 

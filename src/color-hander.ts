@@ -6,7 +6,6 @@ const DARK_FALLBACKS = {
   tableHeader: '#2d3748',
   codeBlock: '#1a202c',
   tableBorder: 'rgba(255, 255, 255, 0.3)',
-  strongForeground: '#a0a0a0',
   blockQuoteBackgrounds: [
     'rgba(255, 255, 255, 0.05)',
     'rgba(255, 255, 255, 0.08)',
@@ -21,7 +20,6 @@ const LIGHT_FALLBACKS = {
   tableHeader: '#f7fafc',
   codeBlock: '#f7fafc',
   tableBorder: 'rgba(0, 0, 0, 0.3)',
-  strongForeground: '#666666',
   blockQuoteBackgrounds: [
     'rgba(74, 85, 104, 0.04)',
     'rgba(74, 85, 104, 0.07)',
@@ -226,36 +224,39 @@ export function generateBrightenedForegroundColor(
   }
 }
 
-export function generateStrongForeground(background: string, foreground: string, fallback: string): string {
-  if (foreground === '#ffffff' || foreground === '#fff' || foreground === '#000000' || foreground === '#000') {
-    return foreground
-  }
+// export function generateStrongForeground(background: string, foreground: string, fallback: string): string {
+//   if (foreground === '#ffffff' || foreground === '#fff' || foreground === '#000000' || foreground === '#000') {
+//     return foreground
+//   }
 
-  try {
-    const chromaColor = chroma(foreground)
-    const adjustedForeground = isDarkColor(background)
-      ? chromaColor.brighten(0.6).hex()
-      : chromaColor.darken(0.6).hex()
-    return adjustedForeground
-  }
-  catch (e) {
-    console.warn('Failed to generate strong foreground color, using fallback.', e)
-    return fallback
-  }
-}
+//   try {
+//     const chromaColor = chroma(foreground)
+//     const adjustedForeground = isDarkColor(background)
+//       ? chromaColor.brighten(0.6).hex()
+//       : chromaColor.darken(0.6).hex()
+//     return adjustedForeground
+//   }
+//   catch (e) {
+//     console.warn('Failed to generate strong foreground color, using fallback.', e)
+//     return fallback
+//   }
+// }
 
 export function generateEnhancedColors(
   themeColors: Record<string, string>,
   isDark: boolean,
-  themeName?: string,
 ): Record<string, string> {
   const enhanced: Record<string, string> = {}
   const fallbacks = isDark ? DARK_FALLBACKS : LIGHT_FALLBACKS
 
-  const background = themeColors['editor.background'] || '#ffffff'
+  const background = themeColors['editor.background']
 
   enhanced['markdown.tableHeader.background'] = adjustContrastColor(background)
   enhanced['markdown.codeBlock.background'] = adjustContrastColor(background)
+
+  const textLinkForeground = themeColors['textLink.foreground'] || (isDark ? '#4fc3f7' : '#0969da')
+  const codeBackground = chroma(textLinkForeground).alpha(0.2).css()
+  enhanced['markdown.code.background'] = codeBackground
 
   const blockquoteColors = generateBlockquoteColors(background, 5)
   enhanced['markdown.blockQuote.background.level1'] = blockquoteColors[0]
@@ -280,14 +281,7 @@ export function generateEnhancedColors(
     enhanced['markdown.table.border'] = fallbacks.tableBorder
   }
 
-  let foreground = themeColors['editor.foreground'] || (isDark ? '#ffffff' : '#000000')
-
-  if (themeName) {
-    const optimizedForeground = generateBrightenedForegroundColor(themeName, background, foreground)
-    if (optimizedForeground !== foreground) {
-      foreground = enhanced['editor.foreground'] = optimizedForeground
-    }
-  }
+  const foreground = themeColors['editor.foreground'] || isDark ? '#ffffff' : '#000000'
 
   const originalSelectionBackground = themeColors['editor.selectionBackground']
   enhanced['editor.selectionBackground'] = generateSelectionBackgroundColor(
@@ -296,11 +290,11 @@ export function generateEnhancedColors(
     3.0,
   )
 
-  enhanced['markdown.strong.foreground'] = generateStrongForeground(
-    background,
-    foreground,
-    fallbacks.strongForeground,
-  )
+  // enhanced['markdown.strong.foreground'] = generateStrongForeground(
+  //   background,
+  //   foreground,
+  //   fallbacks.strongForeground,
+  // )
 
   return enhanced
 }

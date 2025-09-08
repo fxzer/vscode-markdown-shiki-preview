@@ -1,0 +1,14 @@
+/* 主题: light-plus - 频率最高的变量 */
+:root {
+  --editor-background: #FFFFFF; /* 95.0% */
+  --editor-foreground: #000000; /* 95.0% */
+  --list-hoverBackground: #E8E8E8; /* 91.7% */
+  --activityBarBadge-background: #007ACC; /* 90.0% */
+}
+
+/* 变量说明：
+ * --editor-background: editor.background (57/60, 95.0%)
+ * --editor-foreground: editor.foreground (57/60, 95.0%)
+ * --list-hoverBackground: list.hoverBackground (55/60, 91.7%)
+ * --activityBarBadge-background: activityBarBadge.background (54/60, 90.0%)
+ */

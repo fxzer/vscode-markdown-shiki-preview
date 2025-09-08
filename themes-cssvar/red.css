@@ -1,0 +1,24 @@
+/* 主题: red - 频率最高的变量 */
+:root {
+  --editor-background: #390000; /* 95.0% */
+  --editor-foreground: #F8F8F8; /* 95.0% */
+  --activityBar-background: #580000; /* 91.7% */
+  --button-background: #833; /* 91.7% */
+  --focusBorder: #ff6666aa; /* 91.7% */
+  --list-activeSelectionBackground: #880000; /* 91.7% */
+  --list-hoverBackground: #800000; /* 91.7% */
+  --statusBar-background: #700000; /* 91.7% */
+  --titleBar-activeBackground: #770000; /* 91.7% */
+}
+
+/* 变量说明：
+ * --editor-background: editor.background (57/60, 95.0%)
+ * --editor-foreground: editor.foreground (57/60, 95.0%)
+ * --activityBar-background: activityBar.background (55/60, 91.7%)
+ * --button-background: button.background (55/60, 91.7%)
+ * --focusBorder: focusBorder (55/60, 91.7%)
+ * --list-activeSelectionBackground: list.activeSelectionBackground (55/60, 91.7%)
+ * --list-hoverBackground: list.hoverBackground (55/60, 91.7%)
+ * --statusBar-background: statusBar.background (55/60, 91.7%)
+ * --titleBar-activeBackground: titleBar.activeBackground (55/60, 91.7%)
+ */

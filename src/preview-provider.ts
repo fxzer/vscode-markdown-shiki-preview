@@ -74,6 +74,12 @@ export class MarkdownPreviewProvider implements vscode.WebviewPanelSerializer {
             case 'scroll':
               this._scrollSyncManager.handlePreviewScroll(message.scrollPercentage, message.source, message.timestamp)
               break
+            case 'openExternal':
+              vscode.env.openExternal(vscode.Uri.parse(message.url))
+              break
+            case 'openRelativeFile':
+              this.handleRelativeFileClick(message.filePath, message.href)
+              break
           }
         },
         undefined,
@@ -147,6 +153,12 @@ export class MarkdownPreviewProvider implements vscode.WebviewPanelSerializer {
             break
           case 'scroll':
             this._scrollSyncManager.handlePreviewScroll(message.scrollPercentage, message.source, message.timestamp)
+            break
+          case 'openExternal':
+            vscode.env.openExternal(vscode.Uri.parse(message.url))
+            break
+          case 'openRelativeFile':
+            this.handleRelativeFileClick(message.filePath, message.href)
             break
         }
       },
@@ -272,6 +284,43 @@ export class MarkdownPreviewProvider implements vscode.WebviewPanelSerializer {
       await this._themeManager.updateTheme(theme)
       progress.report({ increment: 100, message: '主题切换完成' })
     })
+  }
+
+  // 处理相对路径文件点击
+  private async handleRelativeFileClick(filePath: string, href: string) {
+    try {
+      const currentDocument = this._contentManager.getCurrentDocument()
+      if (!currentDocument) {
+        vscode.window.showErrorMessage('无法获取当前文档信息')
+        return
+      }
+
+      // 解析相对路径
+      const currentDir = vscode.Uri.file(currentDocument.fileName).with({ path: currentDocument.fileName.split('/').slice(0, -1).join('/') })
+      const targetFile = vscode.Uri.joinPath(currentDir, filePath)
+
+      // 检查文件是否存在
+      try {
+        await vscode.workspace.fs.stat(targetFile)
+      } catch (error) {
+        vscode.window.showErrorMessage(`文件不存在: ${filePath}`)
+        return
+      }
+
+      // 打开文件
+      const document = await vscode.workspace.openTextDocument(targetFile)
+      const editor = await vscode.window.showTextDocument(document, vscode.ViewColumn.One)
+
+      // 如果预览窗口存在，切换到新文档
+      if (this._panel) {
+        this.switchToDocument(document)
+      }
+
+      logger.info(`已打开相对路径文件: ${filePath}`)
+    } catch (error) {
+      logger.error('处理相对路径文件点击时出错:', error)
+      vscode.window.showErrorMessage(`无法打开文件: ${filePath}`)
+    }
   }
 
   /**

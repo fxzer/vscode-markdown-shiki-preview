@@ -1,15 +1,14 @@
-/* 主题: vitesse-dark - 频率最高的变量 */
+/* 主题: min-light - 频率最高的变量 */
 :root {
-  --editor-background: #121212; /* 95.0% */
-  --editor-foreground: #dbd7caee; /* 95.0% */
-  --activityBar-background: #121212; /* 91.7% */
-  --button-background: #4d9375; /* 91.7% */
-  --focusBorder: #00000000; /* 91.7% */
-  --list-activeSelectionBackground: #181818; /* 91.7% */
-  --list-hoverBackground: #181818; /* 91.7% */
-  --statusBar-background: #121212; /* 91.7% */
-  --titleBar-activeBackground: #121212; /* 91.7% */
-  --activityBarBadge-background: #bfbaaa; /* 90.0% */
+  --editor-background: #ffffff; /* 95.0% */
+  --editor-foreground: #212121; /* 95.0% */
+  --activityBar-background: #f6f6f6; /* 91.7% */
+  --button-background: #757575; /* 91.7% */
+  --focusBorder: #D0D0D0; /* 91.7% */
+  --list-activeSelectionBackground: #EEE; /* 91.7% */
+  --statusBar-background: #f6f6f6; /* 91.7% */
+  --titleBar-activeBackground: #f6f6f6; /* 91.7% */
+  --activityBarBadge-background: #616161; /* 90.0% */
 }
 
 /* 变量说明：
@@ -19,7 +18,6 @@
  * --button-background: button.background (55/60, 91.7%)
  * --focusBorder: focusBorder (55/60, 91.7%)
  * --list-activeSelectionBackground: list.activeSelectionBackground (55/60, 91.7%)
- * --list-hoverBackground: list.hoverBackground (55/60, 91.7%)
  * --statusBar-background: statusBar.background (55/60, 91.7%)
  * --titleBar-activeBackground: titleBar.activeBackground (55/60, 91.7%)
  * --activityBarBadge-background: activityBarBadge.background (54/60, 90.0%)

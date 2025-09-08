@@ -1,0 +1,24 @@
+/* 主题: solarized-dark - 频率最高的变量 */
+:root {
+  --editor-background: #002B36; /* 95.0% */
+  --editor-foreground: #839496; /* 95.0% */
+  --activityBar-background: #003847; /* 91.7% */
+  --button-background: #2AA19899; /* 91.7% */
+  --focusBorder: #2AA19899; /* 91.7% */
+  --list-activeSelectionBackground: #005A6F; /* 91.7% */
+  --list-hoverBackground: #004454AA; /* 91.7% */
+  --statusBar-background: #00212B; /* 91.7% */
+  --titleBar-activeBackground: #002C39; /* 91.7% */
+}
+
+/* 变量说明：
+ * --editor-background: editor.background (57/60, 95.0%)
+ * --editor-foreground: editor.foreground (57/60, 95.0%)
+ * --activityBar-background: activityBar.background (55/60, 91.7%)
+ * --button-background: button.background (55/60, 91.7%)
+ * --focusBorder: focusBorder (55/60, 91.7%)
+ * --list-activeSelectionBackground: list.activeSelectionBackground (55/60, 91.7%)
+ * --list-hoverBackground: list.hoverBackground (55/60, 91.7%)
+ * --statusBar-background: statusBar.background (55/60, 91.7%)
+ * --titleBar-activeBackground: titleBar.activeBackground (55/60, 91.7%)
+ */

@@ -234,7 +234,7 @@ export class ContentManager {
       const activeEditor = vscode.window.activeTextEditor
       if (activeEditor && activeEditor.document.uri.toString() === documentUri) {
         // 强制更新内容，跳过内容哈希检查
-        await this.updateContent(document)
+        await this.forceUpdateContent(document, false)
       }
     }
     catch (error) {

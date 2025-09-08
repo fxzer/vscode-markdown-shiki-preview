@@ -1,15 +1,15 @@
-/* 主题: vitesse-dark - 频率最高的变量 */
+/* 主题: github-dark-high-contrast - 频率最高的变量 */
 :root {
-  --editor-background: #121212; /* 95.0% */
-  --editor-foreground: #dbd7caee; /* 95.0% */
-  --activityBar-background: #121212; /* 91.7% */
-  --button-background: #4d9375; /* 91.7% */
-  --focusBorder: #00000000; /* 91.7% */
-  --list-activeSelectionBackground: #181818; /* 91.7% */
-  --list-hoverBackground: #181818; /* 91.7% */
-  --statusBar-background: #121212; /* 91.7% */
-  --titleBar-activeBackground: #121212; /* 91.7% */
-  --activityBarBadge-background: #bfbaaa; /* 90.0% */
+  --editor-background: #0a0c10; /* 95.0% */
+  --editor-foreground: #f0f3f6; /* 95.0% */
+  --activityBar-background: #0a0c10; /* 91.7% */
+  --button-background: #09b43a; /* 91.7% */
+  --focusBorder: #409eff; /* 91.7% */
+  --list-activeSelectionBackground: #9ea7b366; /* 91.7% */
+  --list-hoverBackground: #9ea7b31a; /* 91.7% */
+  --statusBar-background: #0a0c10; /* 91.7% */
+  --titleBar-activeBackground: #0a0c10; /* 91.7% */
+  --activityBarBadge-background: #409eff; /* 90.0% */
 }
 
 /* 变量说明：

@@ -55,34 +55,42 @@ export function generateThemeStyles(
     documentWidth: string
   },
   _highlighter?: any,
-  themeName?: string,
 ): ThemeStylesConfig {
-  // 构建基础颜色配置
-  const baseColors = {
-    'editor.background': '#ffffff',
-    'editor.foreground': '#24292e',
-    'editor.lineHighlightBackground': '#f6f8fa',
-    'editorLineNumber.foreground': '#6a737d',
-    'panel.border': '#d0d7de',
-    'editor.selectionBackground': 'rgba(175,184,193,0.2)',
-    'textLink.foreground': '#0969da',
-    'textCodeBlock.background': '#f6f8fa',
-    'editor.foldBackground': 'rgba(175,184,193,0.15)',
-    'textBlockQuote.background': 'rgba(175,184,193,0.1)',
+  // 定义10个核心主题变量
+  const coreThemeVariables = [
+    'editor.background',
+    'editor.foreground',
+    'activityBar.background',
+    'button.background',
+    'focusBorder',
+    'list.activeSelectionBackground',
+    'list.hoverBackground',
+    'statusBar.background',
+    'titleBar.activeBackground',
+    'activityBarBadge.background',
+    'textLink.foreground',
+    'textLink.activeForeground',
+  ]
+
+  // 过滤主题颜色，只保留10个核心变量
+  const filteredThemeColors: Record<string, string> = {}
+  for (const key of coreThemeVariables) {
+    if (themeColors[key]) {
+      filteredThemeColors[key] = themeColors[key]
+    }
   }
 
   // 使用主题颜色覆盖基础配置
-  const allThemeColors = { ...baseColors, ...themeColors }
 
   // 检测主题类型
-  const isDarkTheme = isDarkColor(allThemeColors['editor.background'])
+  const isDarkTheme = isDarkColor(filteredThemeColors['editor.background'])
 
   // 生成增强的颜色变量
-  const enhancedColors = generateEnhancedColors(allThemeColors, isDarkTheme, themeName)
+  const enhancedColors = generateEnhancedColors(filteredThemeColors, isDarkTheme)
 
   // 合并原始主题变量和增强变量
   const allColors = {
-    ...allThemeColors,
+    ...filteredThemeColors,
     ...enhancedColors,
     // 添加布局相关的CSS变量
     'font-size': `${layoutOptions.fontSize}px`,
@@ -95,7 +103,10 @@ export function generateThemeStyles(
   const cssVariables = Object.entries(allColors)
     .map(([key, value]) => `--${key.replaceAll('.', '-')}: ${value};`)
     .join('\n        ')
-  const cssVariablesBlock = `:root {\n        ${cssVariables}\n    }`
+
+  // 添加主题类型变量
+  const themeTypeVariable = `--theme-type: ${isDarkTheme ? 'dark' : 'light'};`
+  const cssVariablesBlock = `:root {\n        ${cssVariables}\n        ${themeTypeVariable}\n    }`
 
   // 获取基础样式并合并
   const baseStyles = getBaseStyles()
