@@ -39,7 +39,7 @@
     "res/*"
   ],
   "engines": {
-    "vscode": "^1.103.0"
+    "vscode": "^1.85.0"
   },
   "activationEvents": [
     "onLanguage:markdown"
@@ -240,7 +240,7 @@
     "@types/lodash-es": "^4.17.12",
     "@types/markdown-it": "^14.1.2",
     "@types/node": "^24.3.1",
-    "@types/vscode": "^1.103.0",
+    "@types/vscode": "^^1.85.0",
     "@vscode/vsce": "^3.6.0",
     "bumpp": "^10.2.3",
     "eslint": "^9.35.0",
