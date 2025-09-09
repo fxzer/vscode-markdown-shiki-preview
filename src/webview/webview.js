@@ -821,6 +821,7 @@ const morphdom = (function () {
 
 // 处理链接点击
 document.addEventListener('click', (event) => {
+  console.log('点击事件触发:', event.target)
   let target = event.target
   // 处理 <a> 标签内部元素的点击事件，确保我们总能拿到 <a> 元素
   while (target && target.tagName !== 'A') {
@@ -829,6 +830,7 @@ document.addEventListener('click', (event) => {
 
   if (target && target.tagName === 'A') {
     const hrefAttr = target.getAttribute('href')
+    console.log('找到链接:', hrefAttr, '目标元素:', target)
 
     if (!hrefAttr) {
       return
@@ -837,6 +839,8 @@ document.addEventListener('click', (event) => {
     // 处理外部链接
     if (hrefAttr.startsWith('http://') || hrefAttr.startsWith('https://') || hrefAttr.startsWith('//')) {
       event.preventDefault()
+      event.stopPropagation() // 阻止事件冒泡
+      console.log(`发送 openExternal 消息: ${hrefAttr}`)
       vscode.postMessage({
         command: 'openExternal',
         url: hrefAttr,

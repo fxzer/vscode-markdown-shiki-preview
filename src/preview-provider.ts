@@ -11,6 +11,8 @@ export class MarkdownPreviewProvider implements vscode.WebviewPanelSerializer {
   private _themeManager: ThemeManager
   private _contentManager: ContentManager
   private _configurationChangeDisposable: vscode.Disposable | undefined
+  private _messageHandlerRegistered = false
+  private _openedLinks = new Set<string>()
 
   constructor(private readonly _extensionUri: vscode.Uri) {
     // 初始化各个管理器
@@ -63,33 +65,12 @@ export class MarkdownPreviewProvider implements vscode.WebviewPanelSerializer {
         // 清理内容管理器的状态
         this._contentManager.clearLastUpdateDocumentUri()
         this._panel = undefined
+        // 重置消息处理器注册标志
+        this._messageHandlerRegistered = false
+        this._openedLinks.clear()
       })
 
-      this._panel.webview.onDidReceiveMessage(
-        (message) => {
-          switch (message.command) {
-            case 'alert':
-              // 只有在面板仍然有效时才显示错误消息
-              if (this._panel) {
-                vscode.window.showErrorMessage(message.text)
-              } else {
-                logger.info('面板已销毁，跳过 alert 消息显示')
-              }
-              break
-            case 'scroll':
-              this._scrollSyncManager.handlePreviewScroll(message.scrollPercentage, message.source, message.timestamp)
-              break
-            case 'openExternal':
-              vscode.env.openExternal(vscode.Uri.parse(message.url))
-              break
-            case 'openRelativeFile':
-              this.handleRelativeFileClick(message.filePath, message.href)
-              break
-          }
-        },
-        undefined,
-        [],
-      )
+      this.setupMessageHandler()
 
       // 保存状态用于序列化恢复
       const saveState = () => {
@@ -147,34 +128,12 @@ export class MarkdownPreviewProvider implements vscode.WebviewPanelSerializer {
       // 清理内容管理器的状态
       this._contentManager.clearLastUpdateDocumentUri()
       this._panel = undefined
+      // 重置消息处理器注册标志
+      this._messageHandlerRegistered = false
+      this._openedLinks.clear()
     })
 
-    // 设置消息处理器
-    this._panel.webview.onDidReceiveMessage(
-      (message) => {
-        switch (message.command) {
-          case 'alert':
-            // 只有在面板仍然有效时才显示错误消息
-            if (this._panel) {
-              vscode.window.showErrorMessage(message.text)
-            } else {
-              logger.info('面板已销毁，跳过 alert 消息显示')
-            }
-            break
-          case 'scroll':
-            this._scrollSyncManager.handlePreviewScroll(message.scrollPercentage, message.source, message.timestamp)
-            break
-          case 'openExternal':
-            vscode.env.openExternal(vscode.Uri.parse(message.url))
-            break
-          case 'openRelativeFile':
-            this.handleRelativeFileClick(message.filePath, message.href)
-            break
-        }
-      },
-      undefined,
-      [],
-    )
+    this.setupMessageHandler()
 
     // 确保高亮器已初始化
     await this._themeManager.ensureHighlighterInitialized()
@@ -246,6 +205,55 @@ export class MarkdownPreviewProvider implements vscode.WebviewPanelSerializer {
     }
   }
 
+  // 设置消息处理器（避免重复注册）
+  private setupMessageHandler() {
+    if (this._messageHandlerRegistered || !this._panel) {
+      return
+    }
+
+    this._panel.webview.onDidReceiveMessage(
+      (message) => {
+        switch (message.command) {
+          case 'alert':
+            // 只有在面板仍然有效时才显示错误消息
+            if (this._panel) {
+              vscode.window.showErrorMessage(message.text)
+            }
+            else {
+              logger.info('面板已销毁，跳过 alert 消息显示')
+            }
+            break
+          case 'scroll':
+            this._scrollSyncManager.handlePreviewScroll(message.scrollPercentage, message.source, message.timestamp)
+            break
+          case 'openExternal':
+            logger.info(`收到 openExternal 消息: ${message.url}`)
+            // 防止重复打开同一个链接
+            if (!this._openedLinks.has(message.url)) {
+              this._openedLinks.add(message.url)
+              vscode.env.openExternal(vscode.Uri.parse(message.url))
+              // 5秒后从集合中移除，允许重新打开
+              setTimeout(() => {
+                this._openedLinks.delete(message.url)
+              }, 5000)
+            }
+            else {
+              logger.info(`链接 ${message.url} 已在5秒内打开过，跳过重复打开`)
+            }
+            break
+          case 'openRelativeFile':
+            this.handleRelativeFileClick(message.filePath, message.href)
+            break
+        }
+      },
+      undefined,
+      [],
+    )
+
+    this._messageHandlerRegistered = true
+    logger.info('消息处理器已注册')
+  }
+
   // 优雅地切换到新文档，确保内容更新和滚动同步都正确设置
   public switchToDocument(document: vscode.TextDocument) {
     // 检查是否是同一个文档，避免不必要的重复设置
@@ -304,7 +312,8 @@ export class MarkdownPreviewProvider implements vscode.WebviewPanelSerializer {
         // 只有在面板仍然有效时才显示错误消息
         if (this._panel) {
           vscode.window.showErrorMessage('无法获取当前文档信息')
-        } else {
+        }
+        else {
           logger.info('面板已销毁，跳过文档信息错误消息显示')
         }
         return
@@ -323,7 +332,8 @@ export class MarkdownPreviewProvider implements vscode.WebviewPanelSerializer {
         // 只有在面板仍然有效时才显示错误消息
         if (this._panel) {
           vscode.window.showErrorMessage(`文件不存在: ${filePath}`)
-        } else {
+        }
+        else {
           logger.info('面板已销毁，跳过文件不存在错误消息显示')
         }
         return
@@ -332,7 +342,7 @@ export class MarkdownPreviewProvider implements vscode.WebviewPanelSerializer {
       // 直接在编辑区打开文件，而不是在WebView中更新内容
       const document = await vscode.workspace.openTextDocument(targetFile)
       await vscode.window.showTextDocument(document, vscode.ViewColumn.One)
-      
+
       // 注意：不再调用 switchToDocument，避免WebView竞态条件
       // 用户可以在编辑区查看文档，如果需要预览可以手动触发
 
@@ -340,11 +350,12 @@ export class MarkdownPreviewProvider implements vscode.WebviewPanelSerializer {
     }
     catch (error) {
       logger.error('处理相对路径文件点击时出错:', error)
-      
+
       // 只有在面板仍然有效时才显示错误消息
       if (this._panel) {
         vscode.window.showErrorMessage(`无法打开文件: ${filePath}`)
-      } else {
+      }
+      else {
         logger.info('面板已销毁，跳过文件打开错误消息显示')
       }
     }
