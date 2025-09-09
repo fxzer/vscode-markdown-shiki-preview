@@ -304,6 +304,58 @@ export class MarkdownPreviewProvider implements vscode.WebviewPanelSerializer {
     })
   }
 
+  /**
+   * 验证和规范化文件路径，防止路径遍历攻击
+   * @param basePath 基础路径
+   * @param relativePath 相对路径
+   * @returns 规范化后的安全路径，如果路径不安全则返回 null
+   */
+  private validateAndResolvePath(basePath: vscode.Uri, relativePath: string): vscode.Uri | null {
+    try {
+      // 解码 URL 编码的字符
+      const decodedPath = decodeURIComponent(relativePath)
+      
+      // 检查路径是否包含可疑字符
+      if (decodedPath.includes('..') || decodedPath.includes('~') || decodedPath.startsWith('/')) {
+        logger.warn(`检测到潜在的路径遍历攻击: ${relativePath}`)
+        return null
+      }
+      
+      // 检查路径是否包含非法字符（Windows 和 Unix）
+      const illegalChars = /[<>:"|?*\x00-\x1F]/
+      if (illegalChars.test(decodedPath)) {
+        logger.warn(`路径包含非法字符: ${relativePath}`)
+        return null
+      }
+      
+      // 检查文件扩展名，只允许安全的文件类型
+      const allowedExtensions = ['.md', '.markdown', '.txt', '.json', '.yaml', '.yml', '.xml', '.csv']
+      const fileExtension = decodedPath.toLowerCase().substring(decodedPath.lastIndexOf('.'))
+      if (fileExtension && !allowedExtensions.includes(fileExtension)) {
+        logger.warn(`不允许的文件扩展名: ${fileExtension}`)
+        return null
+      }
+      
+      // 解析相对路径
+      const resolvedPath = vscode.Uri.joinPath(basePath, decodedPath)
+      
+      // 规范化路径并检查是否仍在基础路径下
+      const normalizedBasePath = basePath.fsPath.replace(/[\/\\]+$/, '')
+      const normalizedResolvedPath = resolvedPath.fsPath.replace(/[\/\\]+$/, '')
+      
+      // 确保解析后的路径仍然在基础路径下
+      if (!normalizedResolvedPath.startsWith(normalizedBasePath)) {
+        logger.warn(`路径遍历尝试检测: ${relativePath} 解析为 ${normalizedResolvedPath}`)
+        return null
+      }
+      
+      return resolvedPath
+    } catch (error) {
+      logger.error(`路径验证失败: ${relativePath}`, error)
+      return null
+    }
+  }
+
   // 处理相对路径文件点击
   private async handleRelativeFileClick(filePath: string, href?: string) {
     try {
@@ -322,7 +374,15 @@ export class MarkdownPreviewProvider implements vscode.WebviewPanelSerializer {
       // 解析相对路径
       const currentFileUri = vscode.Uri.file(currentDocument.fileName)
       const currentDir = vscode.Uri.joinPath(currentFileUri, '..')
-      const targetFile = vscode.Uri.joinPath(currentDir, filePath)
+      
+      // 验证和解析路径
+      const targetFile = this.validateAndResolvePath(currentDir, filePath)
+      if (!targetFile) {
+        if (this._panel) {
+          vscode.window.showErrorMessage(`无效或不安全的文件路径: ${filePath}`)
+        }
+        return
+      }
 
       // 检查文件是否存在
       try {
