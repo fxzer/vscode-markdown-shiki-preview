@@ -43,7 +43,6 @@ function getBaseStyles(): string {
  * @param layoutOptions.lineHeight 行高
  * @param layoutOptions.fontFamily 字体家族
  * @param layoutOptions.documentWidth 文档宽度
- * @param _highlighter Shiki高亮器实例
  * @returns 完整的样式字符串
  */
 export function generateThemeStyles(
@@ -54,7 +53,6 @@ export function generateThemeStyles(
     fontFamily: string
     documentWidth: string
   },
-  _highlighter?: any,
 ): ThemeStylesConfig {
   // 定义10个核心主题变量
   const coreThemeVariables = [

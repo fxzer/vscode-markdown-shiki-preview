@@ -224,24 +224,6 @@ export function generateBrightenedForegroundColor(
   }
 }
 
-// export function generateStrongForeground(background: string, foreground: string, fallback: string): string {
-//   if (foreground === '#ffffff' || foreground === '#fff' || foreground === '#000000' || foreground === '#000') {
-//     return foreground
-//   }
-
-//   try {
-//     const chromaColor = chroma(foreground)
-//     const adjustedForeground = isDarkColor(background)
-//       ? chromaColor.brighten(0.6).hex()
-//       : chromaColor.darken(0.6).hex()
-//     return adjustedForeground
-//   }
-//   catch (e) {
-//     console.warn('Failed to generate strong foreground color, using fallback.', e)
-//     return fallback
-//   }
-// }
-
 export function generateEnhancedColors(
   themeColors: Record<string, string>,
   isDark: boolean,
@@ -289,12 +271,6 @@ export function generateEnhancedColors(
     originalSelectionBackground,
     3.0,
   )
-
-  // enhanced['markdown.strong.foreground'] = generateStrongForeground(
-  //   background,
-  //   foreground,
-  //   fallbacks.strongForeground,
-  // )
 
   return enhanced
 }

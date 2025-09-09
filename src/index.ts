@@ -2,7 +2,7 @@ import { defineExtension, useLogger } from 'reactive-vscode'
 import { bundledThemes } from 'shiki'
 import { window, workspace } from 'vscode'
 import * as vscode from 'vscode'
-import { currentTheme } from './config'
+import { configService } from './config-service'
 import { displayName } from './generated/meta'
 import { MarkdownPreviewProvider } from './preview-provider'
 
@@ -42,10 +42,10 @@ async function showEnhancedThemePicker(provider: MarkdownPreviewProvider): Promi
     ...darkThemes,
   ] as ThemeQuickPickItem[]
 
-  const currentThemeValue = (currentTheme.value as unknown as string) || 'github-light'
+  const currentThemeValue = configService.getCurrentTheme() || 'github-light'
 
   // 找到当前主题的索引
-  const currentIndex = themes.findIndex(t => t.theme === (currentThemeValue as unknown as string))
+  const currentIndex = themes.findIndex(t => t.theme === currentThemeValue)
   if (currentIndex !== -1) {
     themes[currentIndex].picked = true
   }
@@ -116,8 +116,8 @@ async function showEnhancedThemePicker(provider: MarkdownPreviewProvider): Promi
   quickPick.onDidAccept(async () => {
     const selectedItem = quickPick.selectedItems[0] || quickPick.activeItems[0]
     if (selectedItem) {
-      // 使用响应式配置系统更新主题
-      await currentTheme.update(selectedItem.theme as any, vscode.ConfigurationTarget.Global)
+      // 使用配置服务更新主题
+      await configService.updateConfig('currentTheme', selectedItem.theme, vscode.ConfigurationTarget.Global)
       await provider.updateTheme(selectedItem.theme)
       window.showInformationMessage(`主题已更改为: ${selectedItem.theme}`)
     }

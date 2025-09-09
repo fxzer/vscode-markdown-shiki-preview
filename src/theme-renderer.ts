@@ -69,7 +69,7 @@ export class ThemeRenderer {
         ...defaultLayoutOptions,
         ...layoutOptions,
       }
-      const themeStyles = generateThemeStyles(themeData.colors, finalLayoutOptions, this.highlighter, theme)
+      const themeStyles = generateThemeStyles(themeData.colors, finalLayoutOptions)
 
       return themeStyles
     }
