@@ -242,7 +242,7 @@ export class MarkdownPreviewProvider implements vscode.WebviewPanelSerializer {
             }
             break
           case 'openRelativeFile':
-            this.handleRelativeFileClick(message.filePath, message.href)
+            this.handleRelativeFileClick(message.filePath)
             break
         }
       },
@@ -328,7 +328,8 @@ export class MarkdownPreviewProvider implements vscode.WebviewPanelSerializer {
       }
 
       // 检查路径是否包含非法字符（Windows 和 Unix）
-      const illegalChars = /[<>:"|?*\x00-\x1F]/
+      // eslint-disable-next-line no-control-regex
+      const illegalChars = /[<>:"|?*\u0000-\u001F]/
       if (illegalChars.test(decodedPath)) {
         logger.warn(`路径包含非法字符: ${relativePath}`)
         return null
@@ -364,7 +365,7 @@ export class MarkdownPreviewProvider implements vscode.WebviewPanelSerializer {
   }
 
   // 处理相对路径文件点击
-  private async handleRelativeFileClick(filePath: string, href?: string) {
+  private async handleRelativeFileClick(filePath: string) {
     try {
       const currentDocument = this._contentManager.getCurrentDocument()
       if (!currentDocument) {

@@ -1,7 +1,6 @@
 import type { Highlighter } from 'shiki'
 import { container } from '@mdit/plugin-container'
 import { katex } from '@mdit/plugin-katex'
-import * as matter from 'gray-matter'
 import MarkdownIt from 'markdown-it'
 import { createHighlighter } from 'shiki'
 import * as vscode from 'vscode'

@@ -2,7 +2,7 @@
 // eslint-disable-next-line no-undef
 const vscode = acquireVsCodeApi()
 
-// Injected morphdom
+// 注入的 morphdom 库
 const morphdom = (function () {
   'use strict'
 
@@ -16,12 +16,12 @@ const morphdom = (function () {
     let attrValue
     let fromValue
 
-    // document-fragments dont have attributes so lets not do anything
+    // 文档片段没有属性，直接返回
     if (toNode.nodeType === DOCUMENT_FRAGMENT_NODE || fromNode.nodeType === DOCUMENT_FRAGMENT_NODE) {
       return
     }
 
-    // update attributes on original DOM element
+    // 更新原始 DOM 元素的属性
     for (let i = toNodeAttrs.length - 1; i >= 0; i--) {
       attr = toNodeAttrs[i]
       attrName = attr.name
@@ -34,7 +34,7 @@ const morphdom = (function () {
 
         if (fromValue !== attrValue) {
           if (attr.prefix === 'xmlns') {
-            attrName = attr.name // It's not allowed to set an attribute with the XMLNS namespace without specifying the `xmlns` prefix
+            attrName = attr.name // 不允许在不指定 `xmlns` 前缀的情况下设置 XMLNS 命名空间属性
           }
           fromNode.setAttributeNS(attrNamespaceURI, attrName, attrValue)
         }
@@ -48,8 +48,7 @@ const morphdom = (function () {
       }
     }
 
-    // Remove any extra attributes found on the original DOM element that
-    // weren't found on the target element.
+    // 移除原始 DOM 元素中存在但目标元素中不存在的额外属性
     const fromNodeAttrs = fromNode.attributes
 
     for (let d = fromNodeAttrs.length - 1; d >= 0; d--) {
@@ -72,7 +71,7 @@ const morphdom = (function () {
     }
   }
 
-  let range // Create a range object for efficently rendering strings to elements.
+  let range // 创建范围对象用于高效地将字符串渲染为元素
   const NS_XHTML = 'http://www.w3.org/1999/xhtml'
 
   const doc = typeof document === 'undefined' ? undefined : document
@@ -102,7 +101,7 @@ const morphdom = (function () {
   }
 
   /**
-   * This is about the same
+   * 将字符串转换为元素，相当于：
    * var html = new DOMParser().parseFromString(str, 'text/html');
    * return html.body.firstChild;
    *
@@ -112,9 +111,9 @@ const morphdom = (function () {
   function toElement(str) {
     str = str.trim()
     if (HAS_TEMPLATE_SUPPORT) {
-      // avoid restrictions on content for things like `<tr><th>Hi</th></tr>` which
-      // createContextualFragment doesn't support
-      // <template> support not available in IE
+      // 避免对 `<tr><th>Hi</th></tr>` 等内容限制
+      // createContextualFragment 不支持这些内容
+      // IE 不支持 <template>
       return createFragmentFromTemplate(str)
     }
     else if (HAS_RANGE_SUPPORT) {
@@ -125,13 +124,12 @@ const morphdom = (function () {
   }
 
   /**
-   * Returns true if two node's names are the same.
+   * 如果两个节点名称相同则返回 true
    *
-   * NOTE: We don't bother checking `namespaceURI` because you will never find two HTML elements with the same
-   *       nodeName and different namespace URIs.
+   * 注意：不检查 `namespaceURI`，因为不会找到具有相同 nodeName 但不同命名空间 URI 的两个 HTML 元素
    *
    * @param {Element} fromEl
-   * @param {Element} toEl The target element
+   * @param {Element} toEl 目标元素
    * @return {boolean}
    */
   function compareNodeNames(fromEl, toEl) {
@@ -144,14 +142,12 @@ const morphdom = (function () {
       return true
     }
 
-    // If the target element is a virtual DOM node or SVG node then we may
-    // need to normalize the tag name before comparing. Normal HTML elements that are
-    // in the "http://www.w3.org/1999/xhtml"
-    // are converted to upper case
-    if (fromCodeStart <= 90 && toCodeStart >= 97) { // from is upper and to is lower
+    // 如果目标元素是虚拟 DOM 节点或 SVG 节点，可能需要先规范化标签名再比较
+    // 在 "http://www.w3.org/1999/xhtml" 中的普通 HTML 元素会转换为大写
+    if (fromCodeStart <= 90 && toCodeStart >= 97) { // from 是大写，to 是小写
       return fromNodeName === toNodeName.toUpperCase()
     }
-    else if (toCodeStart <= 90 && fromCodeStart >= 97) { // to is upper and from is lower
+    else if (toCodeStart <= 90 && fromCodeStart >= 97) { // to 是大写，from 是小写
       return toNodeName === fromNodeName.toUpperCase()
     }
     else {
@@ -160,11 +156,10 @@ const morphdom = (function () {
   }
 
   /**
-   * Create an element, optionally with a known namespace URI.
+   * 创建元素，可选择指定已知的命名空间 URI
    *
-   * @param {string} name the element name, e.g. 'div' or 'svg'
-   * @param {string} [namespaceURI] the element's namespace URI, i.e. the value of
-   * its `xmlns` attribute or its inferred namespace.
+   * @param {string} name 元素名称，如 'div' 或 'svg'
+   * @param {string} [namespaceURI] 元素的命名空间 URI，即其 `xmlns` 属性值或推断的命名空间
    *
    * @return {Element}
    */
@@ -175,7 +170,7 @@ const morphdom = (function () {
   }
 
   /**
-   * Copies the children of one DOM element to another DOM element
+   * 将一个 DOM 元素的子元素复制到另一个 DOM 元素
    */
   function moveChildren(fromEl, toEl) {
     let curChild = fromEl.firstChild
@@ -210,25 +205,23 @@ const morphdom = (function () {
         }
         if (parentName === 'SELECT' && !parentNode.hasAttribute('multiple')) {
           if (fromEl.hasAttribute('selected') && !toEl.selected) {
-            // Workaround for MS Edge bug where the 'selected' attribute can only be
-            // removed if set to a non-empty value:
+            // 修复 MS Edge 错误的变通方法，其中 'selected' 属性只有在设置为非空值时才能被移除：
             // https://developer.microsoft.com/en-us/microsoft-edge/platform/issues/12087679/
             fromEl.setAttribute('selected', 'selected')
             fromEl.removeAttribute('selected')
           }
-          // We have to reset select element's selectedIndex to -1, otherwise setting
-          // fromEl.selected using the syncBooleanAttrProp below has no effect.
-          // The correct selectedIndex will be set in the SELECT special handler below.
+          // 我们必须将 select 元素的 selectedIndex 重置为 -1，否则下面使用 syncBooleanAttrProp
+          // 设置 fromEl.selected 不会有任何效果
+          // 正确的 selectedIndex 将在下面的 SELECT 特殊处理程序中设置
           parentNode.selectedIndex = -1
         }
       }
       syncBooleanAttrProp(fromEl, toEl, 'selected')
     },
     /**
-     * The "value" attribute is special for the <input> element since it sets
-     * the initial value. Changing the "value" attribute without changing the
-     * "value" property will have no effect since it is only used to the set the
-     * initial value.  Similar for the "checked" attribute, and "disabled".
+     * "value" 属性对 <input> 元素很特殊，因为它设置初始值
+     * 不更改 "value" 属性而只更改 "value" 属性不会有任何效果，因为它只用于设置初始值
+     * "checked" 和 "disabled" 属性类似
      */
     INPUT(fromEl, toEl) {
       syncBooleanAttrProp(fromEl, toEl, 'checked')
@@ -251,8 +244,7 @@ const morphdom = (function () {
 
       const firstChild = fromEl.firstChild
       if (firstChild) {
-        // Needed for IE. Apparently IE sets the placeholder as the
-        // node value and vise versa. This ignores an empty update.
+        // IE 需要。显然 IE 将占位符设置为节点值，反之亦然。这会忽略空更新
         const oldValue = firstChild.nodeValue
 
         if (oldValue === newValue || (!newValue && oldValue === fromEl.placeholder)) {
@@ -266,10 +258,8 @@ const morphdom = (function () {
       if (!toEl.hasAttribute('multiple')) {
         let selectedIndex = -1
         let i = 0
-        // We have to loop through children of fromEl, not toEl since nodes can be moved
-        // from toEl to fromEl directly when morphing.
-        // At the time this special handler is invoked, all children have already been morphed
-        // and appended to / removed from fromEl, so using fromEl here is safe and correct.
+        // 必须遍历 fromEl 的子元素，而不是 toEl，因为在变形时节点可能直接从 toEl 移动到 fromEl
+        // 在调用此特殊处理程序时，所有子元素都已被变形并附加到/从 fromEl 中移除，所以在这里使用 fromEl 是安全且正确的
         let curChild = fromEl.firstChild
         let optgroup
         let nodeName
@@ -278,7 +268,7 @@ const morphdom = (function () {
           if (nodeName === 'OPTGROUP') {
             optgroup = curChild
             curChild = optgroup.firstChild
-            // handle empty optgroups
+            // 处理空的 optgroups
             if (!curChild) {
               curChild = optgroup.nextSibling
               optgroup = null
@@ -352,7 +342,7 @@ const morphdom = (function () {
       }
       const childrenOnly = options.childrenOnly === true
 
-      // This object is used as a lookup to quickly find all keyed elements in the original DOM tree.
+      // 此对象用作查找表，用于快速找到原始 DOM 树中所有带键的元素
       const fromNodesLookup = Object.create(null)
       const keyedRemovalList = []
 
@@ -367,13 +357,12 @@ const morphdom = (function () {
             const key = getNodeKey(curChild)
 
             if (skipKeyedNodes && key) {
-              // 如果我们要跳过带有 key 的节点，则将 key 添加到列表，稍后处理。
+              // 如果我们要跳过带有 key 的节点，则将 key 添加到列表，稍后处理
               addKeyedRemoval(key)
             }
             else {
-              // Only report the node as discarded if it is not keyed. We do this because
-              // at the end we loop through all keyed elements that were unmatched
-              // and then discard them in one final pass.
+              // 只有在节点没有键时才报告为已丢弃。这样做是因为
+              // 最后我们会遍历所有未匹配的带键元素，然后在一次最终传递中丢弃它们
               onNodeDiscarded(curChild)
               if (curChild.firstChild) {
                 walkDiscardedChildNodes(curChild, skipKeyedNodes)
@@ -406,34 +395,6 @@ const morphdom = (function () {
         walkDiscardedChildNodes(node, skipKeyedNodes)
       }
 
-      // // TreeWalker implementation is no faster, but keeping this around in case this changes in the future
-      // function indexTree(root) {
-      //     var treeWalker = document.createTreeWalker(
-      //         root,
-      //         NodeFilter.SHOW_ELEMENT);
-      //
-      //     var el;
-      //     while((el = treeWalker.nextNode())) {
-      //         var key = getNodeKey(el);
-      //         if (key) {
-      //             fromNodesLookup[key] = el;
-      //         }
-      //     }
-      // }
-
-      // // NodeIterator implementation is no faster, but keeping this around in case this changes in the future
-      //
-      // function indexTree(node) {
-      //     var nodeIterator = document.createNodeIterator(node, NodeFilter.SHOW_ELEMENT);
-      //     var el;
-      //     while((el = nodeIterator.nextNode())) {
-      //         var key = getNodeKey(el);
-      //         if (key) {
-      //             fromNodesLookup[key] = el;
-      //         }
-      //     }
-      // }
-
       function indexTree(node) {
         if (node.nodeType === ELEMENT_NODE || node.nodeType === DOCUMENT_FRAGMENT_NODE$1) {
           let curChild = node.firstChild
@@ -443,7 +404,7 @@ const morphdom = (function () {
               fromNodesLookup[key] = curChild
             }
 
-            // Walk recursively
+            // 递归遍历
             indexTree(curChild)
 
             curChild = curChild.nextSibling
@@ -466,8 +427,7 @@ const morphdom = (function () {
           const key = getNodeKey(curChild)
           if (key) {
             const unmatchedFromEl = fromNodesLookup[key]
-            // if we find a duplicate #id node in cache, replace `el` with cache value
-            // and morph it to the child node.
+            // 如果在缓存中找到重复的 #id 节点，用缓存值替换 `el` 并将其变形为子节点
             if (unmatchedFromEl && compareNodeNames(curChild, unmatchedFromEl)) {
               curChild.parentNode.replaceChild(unmatchedFromEl, curChild)
               morphEl(unmatchedFromEl, curChild)
@@ -477,8 +437,7 @@ const morphdom = (function () {
             }
           }
           else {
-            // recursively call for curChild and it's children to see if we find something in
-            // fromNodesLookup
+            // 递归调用 curChild 及其子元素，看看是否在 fromNodesLookup 中找到什么
             handleNodeAdded(curChild)
           }
 
@@ -487,20 +446,15 @@ const morphdom = (function () {
       }
 
       function cleanupFromEl(fromEl, curFromNodeChild, curFromNodeKey) {
-        // We have processed all of the "to nodes". If curFromNodeChild is
-        // non-null then we still have some from nodes left over that need
-        // to be removed
         while (curFromNodeChild) {
           const fromNextSibling = curFromNodeChild.nextSibling
           curFromNodeKey = getNodeKey(curFromNodeChild)
           if (curFromNodeKey) {
-            // Since the node is keyed it might be matched up later so we defer
-            // the actual removal to later
+            // 由于节点有键，它可能稍后匹配，所以我们推迟实际移除
             addKeyedRemoval(curFromNodeKey)
           }
           else {
-            // NOTE: we skip nested keyed nodes from being removed since there is
-            //       still a chance they will be matched up later
+            // 注意：我们跳过嵌套的带键节点被移除，因为它们仍有可能稍后匹配
             removeNode(curFromNodeChild, fromEl, true /* skip keyed nodes */)
           }
           curFromNodeChild = fromNextSibling
@@ -511,29 +465,26 @@ const morphdom = (function () {
         const toElKey = getNodeKey(toEl)
 
         if (toElKey) {
-          // If an element with an ID is being morphed then it will be in the final
-          // DOM so clear it out of the saved elements collection
+          // 如果正在变形带 ID 的元素，它将在最终 DOM 中，所以从保存的元素集合中清除它
           delete fromNodesLookup[toElKey]
         }
 
         if (!childrenOnly) {
-          // optional
+          // 可选的
           const beforeUpdateResult = onBeforeElUpdated(fromEl, toEl)
           if (beforeUpdateResult === false) {
             return
           }
           else if (beforeUpdateResult instanceof HTMLElement) {
             fromEl = beforeUpdateResult
-            // reindex the new fromEl in case it's not in the same
-            // tree as the original fromEl
-            // (Phoenix LiveView sometimes returns a cloned tree,
-            //  but keyed lookups would still point to the original tree)
+            // 重新索引新的 fromEl，以防它与原始 fromEl 不在同一棵树中
+            // (Phoenix LiveView 有时返回克隆的树，但带键查找仍会指向原始树)
             indexTree(fromEl)
           }
 
-          // update attributes on original DOM element first
+          // 首先更新原始 DOM 元素的属性
           morphAttrs(fromEl, toEl)
-          // optional
+          // 可选的
           onElUpdated(fromEl)
 
           if (onBeforeElChildrenUpdated(fromEl, toEl) === false) {
@@ -560,13 +511,13 @@ const morphdom = (function () {
         let toNextSibling
         let matchingFromEl
 
-        // walk the children
+        // 遍历子元素
         while (curToNodeChild) {
           toNextSibling = curToNodeChild.nextSibling
           curToNodeKey = getNodeKey(curToNodeChild)
           let foundMatch = false
 
-          // walk the fromNode children all the way through
+          // 完全遍历 fromNode 子元素
           // eslint-disable-next-line no-unmodified-loop-condition
           while (!skipFrom && curFromNodeChild) {
             fromNextSibling = curFromNodeChild.nextSibling
@@ -580,50 +531,40 @@ const morphdom = (function () {
 
             const curFromNodeType = curFromNodeChild.nodeType
 
-            // this means if the curFromNodeChild doesnt have a match with the curToNodeChild
+            // 这意味着如果 curFromNodeChild 与 curToNodeChild 不匹配
             let isCompatible
 
             if (curFromNodeType === curToNodeChild.nodeType) {
               if (curFromNodeType === ELEMENT_NODE) {
-                // Both nodes being compared are Element nodes
+                // 被比较的两个节点都是元素节点
 
                 if (curToNodeKey) {
-                  // The target node has a key so we want to match it up with the correct element
-                  // in the original DOM tree
+                  // 目标节点有键，所以我们想将其与原始 DOM 树中的正确元素匹配
                   if (curToNodeKey !== curFromNodeKey) {
-                    // The current element in the original DOM tree does not have a matching key so
-                    // let's check our lookup to see if there is a matching element in the original
-                    // DOM tree
+                    // 原始 DOM 树中的当前元素没有匹配的键，所以
+                    // 让我们检查查找表，看看原始 DOM 树中是否有匹配的元素
                     matchingFromEl = fromNodesLookup[curToNodeKey]
                     if (matchingFromEl) {
                       if (fromNextSibling === matchingFromEl) {
-                        // Special case for single element removals. To avoid removing the original
-                        // DOM node out of the tree (since that can break CSS transitions, etc.),
-                        // we will instead discard the current node and wait until the next
-                        // iteration to properly match up the keyed target element with its matching
-                        // element in the original tree
+                        // 单元素移除的特殊情况。为了避免从树中移除原始 DOM 节点
+                        // (因为这可能破坏 CSS 过渡等)，我们将丢弃当前节点并等待下一次
+                        // 迭代来正确匹配带键的目标元素与其在原始树中的匹配元素
                         isCompatible = false
                       }
                       else {
-                        // We found a matching keyed element somewhere in the original DOM tree.
-                        // Let's move the original DOM node into the current position and morph
-                        // it.
+                        // 我们在原始 DOM 树中找到了匹配的带键元素
+                        // 让我们将原始 DOM 节点移动到当前位置并变形它
 
-                        // NOTE: We use insertBefore instead of replaceChild because we want to go through
-                        // the `removeNode()` function for the node that is being discarded so that
-                        // all lifecycle hooks are correctly invoked
+                        // 注意：我们使用 insertBefore 而不是 replaceChild，因为我们希望通过
+                        // `removeNode()` 函数处理被丢弃的节点，以便正确调用所有生命周期钩子
                         fromEl.insertBefore(matchingFromEl, curFromNodeChild)
 
-                        // fromNextSibling = curFromNodeChild.nextSibling;
-
                         if (curFromNodeKey) {
-                          // Since the node is keyed it might be matched up later so we defer
-                          // the actual removal to later
+                          // 由于节点有键，它可能稍后匹配，所以我们推迟实际移除
                           addKeyedRemoval(curFromNodeKey)
                         }
                         else {
-                          // NOTE: we skip nested keyed nodes from being removed since there is
-                          //       still a chance they will be matched up later
+                          // 注意：我们跳过嵌套的带键节点被移除，因为它们仍有可能稍后匹配
                           removeNode(curFromNodeChild, fromEl, true /* skip keyed nodes */)
                         }
 
@@ -632,31 +573,28 @@ const morphdom = (function () {
                       }
                     }
                     else {
-                      // The nodes are not compatible since the "to" node has a key and there
-                      // is no matching keyed node in the source tree
+                      // 节点不兼容，因为 "to" 节点有键但源树中没有匹配的带键节点
                       isCompatible = false
                     }
                   }
                 }
                 else if (curFromNodeKey) {
-                  // The original has a key
+                  // 原始节点有键
                   isCompatible = false
                 }
 
                 isCompatible = isCompatible !== false && compareNodeNames(curFromNodeChild, curToNodeChild)
                 if (isCompatible) {
-                  // We found compatible DOM elements so transform
-                  // the current "from" node to match the current
-                  // target DOM node.
-                  // MORPH
+                  // 我们找到了兼容的 DOM 元素，所以将当前的 "from" 节点变形为匹配当前的
+                  // 目标 DOM 节点
+                  // 变形
                   morphEl(curFromNodeChild, curToNodeChild)
                 }
               }
               else if (curFromNodeType === TEXT_NODE || curFromNodeType === COMMENT_NODE) {
-                // Both nodes being compared are Text or Comment nodes
+                // 被比较的两个节点都是文本或注释节点
                 isCompatible = true
-                // Simply update nodeValue on the original node to
-                // change the text value
+                // 简单地更新原始节点的 nodeValue 来更改文本值
                 if (curFromNodeChild.nodeValue !== curToNodeChild.nodeValue) {
                   curFromNodeChild.nodeValue = curToNodeChild.nodeValue
                 }
@@ -664,41 +602,35 @@ const morphdom = (function () {
             }
 
             if (isCompatible) {
-              // Advance both the "to" child and the "from" child since we found a match
-              // Nothing else to do as we already recursively called morphChildren above
+              // 推进 "to" 子元素和 "from" 子元素，因为我们找到了匹配
+              // 不需要做其他事情，因为我们已经在上面递归调用了 morphChildren
               curToNodeChild = toNextSibling
               curFromNodeChild = fromNextSibling
               foundMatch = true
               break
             }
 
-            // No compatible match so remove the old node from the DOM and continue trying to find a
-            // match in the original DOM. However, we only do this if the from node is not keyed
-            // since it is possible that a keyed node might match up with a node somewhere else in the
-            // target tree and we don't want to discard it just yet since it still might find a
-            // home in the final DOM tree. After everything is done we will remove any keyed nodes
-            // that didn't find a home
+            // 没有兼容的匹配，所以从 DOM 中移除旧节点并继续尝试在原始 DOM 中查找匹配
+            // 但是，我们只在 from 节点没有键时才这样做，因为带键的节点可能与目标树中
+            // 其他地方的节点匹配，我们不想现在就丢弃它，因为它仍可能在最终 DOM 树中找到
+            // 归宿。完成后，我们将移除任何没有找到归宿的带键节点
             if (curFromNodeKey) {
-              // Since the node is keyed it might be matched up later so we defer
-              // the actual removal to later
+              // 由于节点有键，它可能稍后匹配，所以我们推迟实际移除
               addKeyedRemoval(curFromNodeKey)
             }
             else {
-              // NOTE: we skip nested keyed nodes from being removed since there is
-              //       still a chance they will be matched up later
+              // 注意：我们跳过嵌套的带键节点被移除，因为它们仍有可能稍后匹配
               removeNode(curFromNodeChild, fromEl, true /* skip keyed nodes */)
             }
 
             curFromNodeChild = fromNextSibling
-          } // END: while(curFromNodeChild) {}
+          } // 结束：while(curFromNodeChild) {}
 
-          // If we got this far then we did not find a candidate match for
-          // our "to node" and we exhausted all of the children "from"
-          // nodes. Therefore, we will just append the current "to" node
-          // to the end
+          // 如果我们到达这里，那么我们没有为 "to node" 找到候选匹配，并且我们
+          // 已经用尽了所有 "from" 子节点。因此，我们只需将当前的 "to" 节点附加到末尾
           matchingFromEl = fromNodesLookup[curToNodeKey]
           if (curToNodeKey && matchingFromEl && compareNodeNames(matchingFromEl, curToNodeChild)) {
-            // MORPH
+            // 变形
             if (!skipFrom && matchingFromEl && matchingFromEl.nodeType) {
               addChild(fromEl, matchingFromEl)
             }
@@ -727,7 +659,7 @@ const morphdom = (function () {
           }
           else {
             curToNodeChild = toNextSibling
-            // Don't advance curFromNodeChild here as it might be needed for the next iteration
+            // 不要在这里推进 curFromNodeChild，因为它可能在下次迭代中需要
           }
         }
 
@@ -737,15 +669,15 @@ const morphdom = (function () {
         if (specialElHandler) {
           specialElHandler(fromEl, toEl)
         }
-      } // END: morphChildren(...)
+      } // 结束：morphChildren(...)
 
       let morphedNode = fromNode
       const morphedNodeType = morphedNode.nodeType
       const toNodeType = toNode.nodeType
 
       if (!childrenOnly) {
-        // Handle the case where we are given two DOM nodes that are not
-        // compatible (e.g. <div> --> <span> or <div> --> TEXT)
+        // 处理我们被给定两个不兼容的 DOM 节点的情况
+        // (例如 <div> --> <span> 或 <div> --> TEXT)
         if (morphedNodeType === ELEMENT_NODE) {
           if (toNodeType === ELEMENT_NODE) {
             if (!compareNodeNames(fromNode, toNode)) {
@@ -754,11 +686,11 @@ const morphdom = (function () {
             }
           }
           else {
-            // Going from an element node to a text node
+            // 从元素节点变为文本节点
             morphedNode = toNode
           }
         }
-        else if (morphedNodeType === TEXT_NODE || morphedNodeType === COMMENT_NODE) { // Text or comment node
+        else if (morphedNodeType === TEXT_NODE || morphedNodeType === COMMENT_NODE) { // 文本或注释节点
           if (toNodeType === morphedNodeType) {
             if (morphedNode.nodeValue !== toNode.nodeValue) {
               morphedNode.nodeValue = toNode.nodeValue
@@ -767,15 +699,15 @@ const morphdom = (function () {
             return morphedNode
           }
           else {
-            // Text node to something else
+            // 文本节点变为其他类型
             morphedNode = toNode
           }
         }
       }
 
       if (morphedNode === toNode) {
-        // The "to node" was not compatible with the "from node" so we had to
-        // toss out the "from node" and use the "to node"
+        // "to node" 与 "from node" 不兼容，所以我们不得不
+        // 丢弃 "from node" 并使用 "to node"
         onNodeDiscarded(fromNode)
       }
       else {
@@ -785,11 +717,10 @@ const morphdom = (function () {
 
         morphEl(morphedNode, toNode, childrenOnly)
 
-        // We now need to loop over any keyed nodes that might need to be
-        // removed. We only do the removal if we know that the keyed node
-        // never found a match. When a keyed node is matched up we remove
-        // it out of fromNodesLookup and we use fromNodesLookup to determine
-        // if a keyed node has been matched up or not
+        // 我们现在需要遍历可能需要移除的任何带键节点
+        // 我们只在知道带键节点从未找到匹配时才进行移除
+        // 当带键节点匹配时，我们从 fromNodesLookup 中移除它，并使用 fromNodesLookup 来确定
+        // 带键节点是否已匹配
         if (keyedRemovalList) {
           for (let i = 0, len = keyedRemovalList.length; i < len; i++) {
             const elToRemove = fromNodesLookup[keyedRemovalList[i]]
@@ -804,11 +735,9 @@ const morphdom = (function () {
         if (morphedNode && morphedNode.actualize) {
           morphedNode = morphedNode.actualize(fromNode.ownerDocument || doc)
         }
-        // If we had to swap out the from node with a new node because the old
-        // node was not compatible with the target node then we need to
-        // replace the old DOM node in the original DOM tree. This is only
-        // possible if the original DOM node was part of a DOM tree which
-        // we know is the case if it has a parent node.
+        // 如果我们必须用新节点替换 from 节点，因为旧节点与目标节点不兼容，
+        // 那么我们需要在原始 DOM 树中替换旧 DOM 节点。这只有在原始 DOM 节点
+        // 是 DOM 树的一部分时才可能，我们知道如果它有父节点就是这种情况
         fromNode.parentNode.replaceChild(morphedNode, fromNode)
       }
 
@@ -819,9 +748,8 @@ const morphdom = (function () {
   return morphdomFactory(morphAttrs)
 })()
 
-// 处理链接点击
+// 处理链接点击事件
 document.addEventListener('click', (event) => {
-  console.log('点击事件触发:', event.target)
   let target = event.target
   // 处理 <a> 标签内部元素的点击事件，确保我们总能拿到 <a> 元素
   while (target && target.tagName !== 'A') {
@@ -830,7 +758,6 @@ document.addEventListener('click', (event) => {
 
   if (target && target.tagName === 'A') {
     const hrefAttr = target.getAttribute('href')
-    console.log('找到链接:', hrefAttr, '目标元素:', target)
 
     if (!hrefAttr) {
       return
@@ -840,13 +767,12 @@ document.addEventListener('click', (event) => {
     if (hrefAttr.startsWith('http://') || hrefAttr.startsWith('https://') || hrefAttr.startsWith('//')) {
       event.preventDefault()
       event.stopPropagation() // 阻止事件冒泡
-      console.log(`发送 openExternal 消息: ${hrefAttr}`)
       vscode.postMessage({
         command: 'openExternal',
         url: hrefAttr,
       })
     }
-    // 处理相对路径链接（.md文件）
+    // 处理相对路径链接（.md 文件）
     else if (hrefAttr.endsWith('.md')) {
       event.preventDefault()
       vscode.postMessage({
@@ -860,7 +786,7 @@ document.addEventListener('click', (event) => {
   }
 })
 
-// 配置mermaid
+// 配置 Mermaid
 const mermaidConfig = {
   startOnLoad: false,
   theme: 'default',
@@ -910,7 +836,7 @@ function loadMermaidLibrary() {
         }
       }, 100)
 
-      // 10秒超时
+      // 10 秒超时
       setTimeout(() => {
         clearInterval(checkInterval)
         mermaidLoading = false
@@ -945,7 +871,7 @@ function loadMermaidLibrary() {
   })
 }
 
-// 初始化mermaid
+// 初始化 Mermaid
 async function initMermaid() {
   // 尝试初始化 Mermaid
 
@@ -960,17 +886,17 @@ async function initMermaid() {
 
       // 等待一小段时间确保 DOM 完全加载
       setTimeout(() => {
-      // 开始渲染 Mermaid 图表
+        // 开始渲染 Mermaid 图表
         renderMermaidCharts()
       }, 500)
     }
   }
-  catch (error) {
-    console.error('Mermaid 初始化失败:', error)
+  catch {
+    // Mermaid 初始化失败，错误已在其他地方处理
   }
 }
 
-// 渲染所有mermaid图表
+// 渲染所有 Mermaid 图表
 function renderMermaidCharts() {
   const mermaidElements = document.querySelectorAll('.mermaid')
   // 找到 Mermaid 代码块
@@ -984,20 +910,20 @@ function renderMermaidCharts() {
     const graphId = `graph-${index}-${Date.now()}`
 
     try {
-      // 使用最新的mermaid API
+      // 使用最新的 Mermaid API
       if (typeof mermaid !== 'undefined') {
         // eslint-disable-next-line no-undef
         mermaid.render(graphId, graphDefinition).then(({ svg }) => {
           element.innerHTML = svg
         }).catch((error) => {
           console.error('Mermaid render error:', error)
-          element.innerHTML = `<pre style="color: red;">Mermaid渲染错误: ${error.message}</pre>`
+          element.innerHTML = `<pre style="color: red;">Mermaid 渲染错误: ${error.message}</pre>`
         })
       }
     }
     catch (error) {
       console.error('Mermaid error:', error)
-      element.innerHTML = `<pre style="color: red;">Mermaid解析错误: ${error.message}</pre>`
+      element.innerHTML = `<pre style="color: red;">Mermaid 解析错误: ${error.message}</pre>`
     }
   })
 }
@@ -1007,7 +933,7 @@ function hasMermaidBlocks() {
   return document.querySelectorAll('.mermaid').length > 0
 }
 
-// 监听VSCode消息
+// 监听 VS Code 消息
 window.addEventListener('message', (event) => {
   const message = event.data
 

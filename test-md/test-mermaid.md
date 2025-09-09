@@ -144,8 +144,6 @@ gantt
     用户验收测试       :d3, after d2, 5d
 ```
 
-
-
 ## 旅程图 (Journey)
 ```mermaid
 journey
@@ -177,7 +175,6 @@ timeline
       第一季度 : 版本迭代
       第二季度 : 功能扩展
 ```
-
 
 ## C4 图表 (C4 Diagram)
 ```mermaid
