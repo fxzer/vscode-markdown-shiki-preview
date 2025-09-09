@@ -3,7 +3,7 @@
   "name": "vscode-markdown-shiki-preview",
   "displayName": " VSCode Markdown Shiki Preview",
   "type": "module",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "private": true,
   "packageManager": "pnpm@10.15.1",
   "description": "A VSCode extension for previewing Markdown files with enhanced theme switching, keyboard navigation, and real-time preview",

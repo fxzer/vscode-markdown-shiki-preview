@@ -22,7 +22,7 @@
 
 本扩展的核心是使用 [Shiki](https://shiki.matsu.io/) 作为语法高亮引擎。Shiki 是一个功能强大的代码高亮库，它使用与 VSCode 相同的 TextMate 语法定义，因此可以**像素级精准**地渲染代码块，并支持海量的色彩主题。
 
-- 🎨 **丰富的主题选择**: 内置 **60+** 种流行的 Shiki 主题，告别手动输入主题名称的繁琐。
+- 🎨 **丰富的主题选择**: 内置 **60+** 种流行的 Shiki 主题， 可随时进行主题预览与设置。
 - ⌨️ **实时主题预览**: 交互式主题选择器，使用键盘**方向键**即可实时预览不同主题的效果，**回车**确认，`Esc` 取消。
 - 🔄 **双向同步滚动**: 编辑器和预览窗口之间的双向同步滚动，方便长文档的阅读和编辑。
 - 📊 **扩展语法支持**:
@@ -44,7 +44,7 @@
 
 1.  **打开预览**:
     *   打开一个 Markdown 文件 (`.md`)。
-    *   点击编辑器右上角的预览图标 **"Open Markdown Preview"**。
+    *   点击编辑器右上角的插件预览图标 **"Open Markdown Preview"**。
     *   或者使用命令面板 (`Ctrl+Shift+P`)，输入并执行 `Open Markdown Preview` 命令。
 
 2.  **切换主题**:
@@ -78,6 +78,48 @@
 | `markdownPreview.lineHeight` | `number` | `1.6` | 预览内容的行高 |
 | `markdownPreview.syncScroll` | `boolean` | `true` | 是否启用双向同步滚动 |
 | `markdownPreview.fontFamily` | `string` | `"system-ui"` | 预览内容的字体族 |
+| `markdownPreview.documentWidth` | `string` | `"1000px"` | 预览内容的容器宽度 |
+| `markdownPreview.enableMermaid` | `boolean` | `true` | 是否启用 Mermaid 图表预览 |
+
+### 📋 配置应用策略
+
+本扩展完全遵循 VSCode 的配置优先级策略，确保配置在不同作用域下正确应用：
+
+**优先级从高到低**：
+1. **工作区文件夹设置** - 仅对特定文件夹生效
+2. **工作区设置** - 对当前工作区生效
+3. **用户设置** - 全局用户设置
+4. **默认值** - 扩展内置默认值
+
+**配置作用域说明**：
+- **用户设置** (`User Settings`): 全局生效，影响所有工作区
+- **工作区设置** (`Workspace Settings`): 仅对当前工作区生效
+- **工作区文件夹设置** (`Folder Settings`): 仅对特定文件夹及其子文件夹生效
+
+**配置示例**：
+```json
+// 用户设置 (settings.json)
+{
+  "markdownPreview.currentTheme": "github-dark",
+  "markdownPreview.fontSize": 16
+}
+
+// 工作区设置 (.vscode/settings.json)
+{
+  "markdownPreview.currentTheme": "vitesse-light",
+  "markdownPreview.documentWidth": "1200px"
+}
+
+// 工作区文件夹设置 (.vscode/settings.json)
+{
+  "markdownPreview.fontFamily": "JetBrains Mono"
+}
+```
+
+**实时配置更新**：
+- 配置修改后会自动生效，无需重启 VSCode
+- 支持配置变化监听，预览内容会实时更新
+- 配置缓存机制确保性能优化
 
 ## 💻 源码与开发
 
