@@ -102,6 +102,12 @@ export class ContentManager {
    * 执行实际的内容更新逻辑
    */
   private async executeContentUpdate(document: vscode.TextDocument, force: boolean, progress: vscode.Progress<{ message?: string, increment?: number }> | null): Promise<void> {
+    // 检查面板是否仍然有效
+    if (!this._panel) {
+      logger.info('[executeContentUpdate] Panel is disposed, skipping update')
+      return
+    }
+
     progress?.report({ increment: 0, message: '准备渲染内容...' })
 
     // 确保高亮器已初始化
@@ -150,9 +156,15 @@ export class ContentManager {
 
     // 如果不是强制更新（即只是内容变化），则发送增量更新消息
     if (!force && this.lastUpdateDocumentUri === documentUri) {
+      // 再次检查面板是否仍然有效
+      if (!this._panel) {
+        logger.info('[updateContent] Panel is disposed, skipping incremental update')
+        return
+      }
+      
       logger.info('[updateContent] Sending incremental update to webview')
       progress?.report({ increment: 80, message: '更新预览内容...' })
-      this._panel?.webview.postMessage({
+      this._panel.webview.postMessage({
         command: 'update-content',
         html: htmlContent,
       })
@@ -175,40 +187,53 @@ export class ContentManager {
 
       try {
         progress?.report({ increment: 80, message: '应用主题和样式...' })
-        if (this._panel) {
-          this._panel.webview.html = this.getHtmlForWebview(htmlContent, {
-            theme: currentTheme,
-            fontSize,
-            lineHeight,
-            fontFamily,
-            documentWidth,
-            hasMermaid,
-          })
+        // 再次检查面板是否仍然有效
+        if (!this._panel) {
+          logger.info('[updateContent] Panel is disposed, skipping full HTML update')
+          return
         }
+        
+        this._panel.webview.html = this.getHtmlForWebview(htmlContent, {
+          theme: currentTheme,
+          fontSize,
+          lineHeight,
+          fontFamily,
+          documentWidth,
+          hasMermaid,
+        })
       }
       catch (error) {
         logger.error('生成 HTML 预览失败:', error)
-        vscode.window.showErrorMessage('生成预览内容失败，请检查主题配置')
+        
+        // 只有在面板仍然有效时才显示错误消息
+        if (this._panel) {
+          vscode.window.showErrorMessage('生成预览内容失败，请检查主题配置')
 
-        // 尝试使用默认主题重新生成
-        try {
-          logger.info('尝试使用默认主题重新生成预览')
+          // 只有在面板仍然有效时才尝试使用默认主题重新生成
           if (this._panel) {
-            this._panel.webview.html = this.getHtmlForWebview(htmlContent, {
-              theme: 'vitesse-dark',
-              fontSize,
-              lineHeight,
-              fontFamily,
-              documentWidth,
-              hasMermaid,
-            })
+            try {
+              logger.info('尝试使用默认主题重新生成预览')
+              this._panel.webview.html = this.getHtmlForWebview(htmlContent, {
+                theme: 'vitesse-dark',
+                fontSize,
+                lineHeight,
+                fontFamily,
+                documentWidth,
+                hasMermaid,
+              })
+            }
+            catch (fallbackError) {
+              logger.error('默认主题也失败:', fallbackError)
+              // 再次检查面板是否仍然有效
+              if (this._panel) {
+                this._panel.webview.html = `<html><body><h2>预览生成失败</h2><p>错误: ${error instanceof Error ? error.message : '未知错误'}</p></body></html>`
+              }
+            }
+          } else {
+            logger.info('面板已销毁，跳过默认主题重试')
           }
-        }
-        catch (fallbackError) {
-          logger.error('默认主题也失败:', fallbackError)
-          if (this._panel) {
-            this._panel.webview.html = `<html><body><h2>预览生成失败</h2><p>错误: ${error instanceof Error ? error.message : '未知错误'}</p></body></html>`
-          }
+        } else {
+          logger.info('面板已销毁，跳过错误处理和重试')
         }
       }
     }
@@ -228,18 +253,19 @@ export class ContentManager {
    */
   private async performContentUpdate(document: vscode.TextDocument): Promise<void> {
     try {
-      const documentUri = document.uri.toString()
-
-      // 确保文档仍然是活动的
-      const activeEditor = vscode.window.activeTextEditor
-      if (activeEditor && activeEditor.document.uri.toString() === documentUri) {
-        // 强制更新内容，跳过内容哈希检查
-        await this.forceUpdateContent(document, false)
-      }
+      // 强制更新内容，跳过内容哈希检查
+      // 移除活动编辑器检查，因为相对链接跳转时新文档可能不是活动编辑器
+      await this.forceUpdateContent(document, false)
     }
     catch (error) {
       logger.error('内容更新失败:', error)
-      vscode.window.showErrorMessage('Markdown 预览内容更新失败，请检查文件格式')
+      
+      // 只有在面板仍然有效时才显示错误消息
+      if (this._panel) {
+        vscode.window.showErrorMessage('Markdown 预览内容更新失败，请检查文件格式')
+      } else {
+        logger.info('面板已销毁，跳过错误消息显示')
+      }
     }
   }
 

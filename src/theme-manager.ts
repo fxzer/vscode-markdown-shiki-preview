@@ -337,7 +337,15 @@ export class ThemeManager {
         }
         catch (error) {
           logger.error(`[updateTheme] 加载主题 '${theme}' 失败:`, error)
-          vscode.window.showErrorMessage(`加载主题 '${theme}' 失败。`)
+
+          // 只有在面板仍然有效时才显示错误消息
+          if (this._panel) {
+            vscode.window.showErrorMessage(`加载主题 '${theme}' 失败。`)
+          }
+          else {
+            logger.info('面板已销毁，跳过主题加载错误消息显示')
+          }
+
           // 如果加载失败，则不切换主题
           return
         }
@@ -383,31 +391,47 @@ export class ThemeManager {
             documentWidth,
           })
 
-          // 直接更新webview内容
-          this._panel.webview.html = this.generateHtmlForWebview(html, {
-            theme: this._currentShikiTheme,
-            themeStyles,
-            fontSize,
-            lineHeight,
-            fontFamily,
-            documentWidth,
-          })
-
-          logger.info('[updateTheme] Preview content updated successfully')
+          // 只有在面板仍然有效时才更新webview内容
+          if (this._panel) {
+            this._panel.webview.html = this.generateHtmlForWebview(html, {
+              theme: this._currentShikiTheme,
+              themeStyles,
+              fontSize,
+              lineHeight,
+              fontFamily,
+              documentWidth,
+            })
+            logger.info('[updateTheme] Preview content updated successfully')
+          }
+          else {
+            logger.info('面板已销毁，跳过webview内容更新')
+          }
         }
         catch (error) {
           logger.error('[updateTheme] Error updating preview content:', error)
-          // 如果更新失败，尝试重新加载整个内容
-          this._panel.webview.postMessage({
-            command: 'reloadContent',
-            theme: this._currentShikiTheme,
-          })
+          // 只有在面板仍然有效时才尝试重新加载内容
+          if (this._panel) {
+            this._panel.webview.postMessage({
+              command: 'reloadContent',
+              theme: this._currentShikiTheme,
+            })
+          }
+          else {
+            logger.info('面板已销毁，跳过重新加载内容')
+          }
         }
       }
     }
     catch (error) {
       logger.error('更新主题失败:', error)
-      vscode.window.showErrorMessage(`主题更新失败: ${error instanceof Error ? error.message : '未知错误'}`)
+
+      // 只有在面板仍然有效时才显示错误消息
+      if (this._panel) {
+        vscode.window.showErrorMessage(`主题更新失败: ${error instanceof Error ? error.message : '未知错误'}`)
+      }
+      else {
+        logger.info('面板已销毁，跳过主题更新错误消息显示')
+      }
 
       // 恢复到之前的主题
       if (this._panel && this._currentDocument) {
@@ -434,15 +458,20 @@ export class ThemeManager {
             documentWidth,
           })
 
-          // 直接更新webview内容
-          this._panel.webview.html = this.generateHtmlForWebview(html, {
-            theme: this._currentShikiTheme,
-            themeStyles,
-            fontSize,
-            lineHeight,
-            fontFamily,
-            documentWidth,
-          })
+          // 只有在面板仍然有效时才更新webview内容
+          if (this._panel) {
+            this._panel.webview.html = this.generateHtmlForWebview(html, {
+              theme: this._currentShikiTheme,
+              themeStyles,
+              fontSize,
+              lineHeight,
+              fontFamily,
+              documentWidth,
+            })
+          }
+          else {
+            logger.info('面板已销毁，跳过恢复主题的webview内容更新')
+          }
         }
         catch (recoveryError) {
           logger.error('恢复主题失败:', recoveryError)
@@ -594,7 +623,13 @@ export class ThemeManager {
         }
         catch (error) {
           logger.error('[validateAndFixTheme] 更新配置失败:', error)
-          vscode.window.showWarningMessage('无法自动修复主题配置，请手动检查设置')
+          // 只有在面板仍然有效时才显示警告消息
+          if (this._panel) {
+            vscode.window.showWarningMessage('无法自动修复主题配置，请手动检查设置')
+          }
+          else {
+            logger.info('面板已销毁，跳过主题配置修复警告消息显示')
+          }
         }
       }
 
@@ -625,6 +660,7 @@ export class ThemeManager {
       nonce,
       extensionUri: '', // 将在主类中设置
       documentWidth: config.documentWidth,
+      hasMermaid: false, // 主题管理器不处理Mermaid，由内容管理器处理
     })
   }
 

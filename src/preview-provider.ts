@@ -69,7 +69,12 @@ export class MarkdownPreviewProvider implements vscode.WebviewPanelSerializer {
         (message) => {
           switch (message.command) {
             case 'alert':
-              vscode.window.showErrorMessage(message.text)
+              // 只有在面板仍然有效时才显示错误消息
+              if (this._panel) {
+                vscode.window.showErrorMessage(message.text)
+              } else {
+                logger.info('面板已销毁，跳过 alert 消息显示')
+              }
               break
             case 'scroll':
               this._scrollSyncManager.handlePreviewScroll(message.scrollPercentage, message.source, message.timestamp)
@@ -149,7 +154,12 @@ export class MarkdownPreviewProvider implements vscode.WebviewPanelSerializer {
       (message) => {
         switch (message.command) {
           case 'alert':
-            vscode.window.showErrorMessage(message.text)
+            // 只有在面板仍然有效时才显示错误消息
+            if (this._panel) {
+              vscode.window.showErrorMessage(message.text)
+            } else {
+              logger.info('面板已销毁，跳过 alert 消息显示')
+            }
             break
           case 'scroll':
             this._scrollSyncManager.handlePreviewScroll(message.scrollPercentage, message.source, message.timestamp)
@@ -287,16 +297,22 @@ export class MarkdownPreviewProvider implements vscode.WebviewPanelSerializer {
   }
 
   // 处理相对路径文件点击
-  private async handleRelativeFileClick(filePath: string) {
+  private async handleRelativeFileClick(filePath: string, href?: string) {
     try {
       const currentDocument = this._contentManager.getCurrentDocument()
       if (!currentDocument) {
-        vscode.window.showErrorMessage('无法获取当前文档信息')
+        // 只有在面板仍然有效时才显示错误消息
+        if (this._panel) {
+          vscode.window.showErrorMessage('无法获取当前文档信息')
+        } else {
+          logger.info('面板已销毁，跳过文档信息错误消息显示')
+        }
         return
       }
 
       // 解析相对路径
-      const currentDir = vscode.Uri.file(currentDocument.fileName).with({ path: currentDocument.fileName.split('/').slice(0, -1).join('/') })
+      const currentFileUri = vscode.Uri.file(currentDocument.fileName)
+      const currentDir = vscode.Uri.joinPath(currentFileUri, '..')
       const targetFile = vscode.Uri.joinPath(currentDir, filePath)
 
       // 检查文件是否存在
@@ -304,24 +320,33 @@ export class MarkdownPreviewProvider implements vscode.WebviewPanelSerializer {
         await vscode.workspace.fs.stat(targetFile)
       }
       catch {
-        vscode.window.showErrorMessage(`文件不存在: ${filePath}`)
+        // 只有在面板仍然有效时才显示错误消息
+        if (this._panel) {
+          vscode.window.showErrorMessage(`文件不存在: ${filePath}`)
+        } else {
+          logger.info('面板已销毁，跳过文件不存在错误消息显示')
+        }
         return
       }
 
-      // 打开文件
+      // 直接在编辑区打开文件，而不是在WebView中更新内容
       const document = await vscode.workspace.openTextDocument(targetFile)
-      // const editor = await vscode.window.showTextDocument(document, vscode.ViewColumn.One)
-
-      // 如果预览窗口存在，切换到新文档
-      if (this._panel) {
-        this.switchToDocument(document)
-      }
+      await vscode.window.showTextDocument(document, vscode.ViewColumn.One)
+      
+      // 注意：不再调用 switchToDocument，避免WebView竞态条件
+      // 用户可以在编辑区查看文档，如果需要预览可以手动触发
 
       logger.info(`已打开相对路径文件: ${filePath}`)
     }
     catch (error) {
       logger.error('处理相对路径文件点击时出错:', error)
-      vscode.window.showErrorMessage(`无法打开文件: ${filePath}`)
+      
+      // 只有在面板仍然有效时才显示错误消息
+      if (this._panel) {
+        vscode.window.showErrorMessage(`无法打开文件: ${filePath}`)
+      } else {
+        logger.info('面板已销毁，跳过文件打开错误消息显示')
+      }
     }
   }
 
