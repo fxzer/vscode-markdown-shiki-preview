@@ -300,6 +300,12 @@ export class MarkdownPreviewProvider implements vscode.WebviewPanelSerializer {
     }, async (progress) => {
       progress.report({ increment: 0, message: '应用新主题...' })
       await this._themeManager.updateTheme(theme)
+
+      // 实时预览时也需要刷新内容以应用新主题
+      if (this._contentManager.getCurrentDocument()) {
+        await this._contentManager.forceUpdateContent(this._contentManager.getCurrentDocument()!)
+      }
+
       progress.report({ increment: 100, message: '主题切换完成' })
     })
   }
@@ -314,20 +320,20 @@ export class MarkdownPreviewProvider implements vscode.WebviewPanelSerializer {
     try {
       // 解码 URL 编码的字符
       const decodedPath = decodeURIComponent(relativePath)
-      
+
       // 检查路径是否包含可疑字符
       if (decodedPath.includes('..') || decodedPath.includes('~') || decodedPath.startsWith('/')) {
         logger.warn(`检测到潜在的路径遍历攻击: ${relativePath}`)
         return null
       }
-      
+
       // 检查路径是否包含非法字符（Windows 和 Unix）
       const illegalChars = /[<>:"|?*\x00-\x1F]/
       if (illegalChars.test(decodedPath)) {
         logger.warn(`路径包含非法字符: ${relativePath}`)
         return null
       }
-      
+
       // 检查文件扩展名，只允许安全的文件类型
       const allowedExtensions = ['.md', '.markdown', '.txt', '.json', '.yaml', '.yml', '.xml', '.csv']
       const fileExtension = decodedPath.toLowerCase().substring(decodedPath.lastIndexOf('.'))
@@ -335,22 +341,23 @@ export class MarkdownPreviewProvider implements vscode.WebviewPanelSerializer {
         logger.warn(`不允许的文件扩展名: ${fileExtension}`)
         return null
       }
-      
+
       // 解析相对路径
       const resolvedPath = vscode.Uri.joinPath(basePath, decodedPath)
-      
+
       // 规范化路径并检查是否仍在基础路径下
-      const normalizedBasePath = basePath.fsPath.replace(/[\/\\]+$/, '')
-      const normalizedResolvedPath = resolvedPath.fsPath.replace(/[\/\\]+$/, '')
-      
+      const normalizedBasePath = basePath.fsPath.replace(/[/\\]+$/, '')
+      const normalizedResolvedPath = resolvedPath.fsPath.replace(/[/\\]+$/, '')
+
       // 确保解析后的路径仍然在基础路径下
       if (!normalizedResolvedPath.startsWith(normalizedBasePath)) {
         logger.warn(`路径遍历尝试检测: ${relativePath} 解析为 ${normalizedResolvedPath}`)
         return null
       }
-      
+
       return resolvedPath
-    } catch (error) {
+    }
+    catch (error) {
       logger.error(`路径验证失败: ${relativePath}`, error)
       return null
     }
@@ -374,7 +381,7 @@ export class MarkdownPreviewProvider implements vscode.WebviewPanelSerializer {
       // 解析相对路径
       const currentFileUri = vscode.Uri.file(currentDocument.fileName)
       const currentDir = vscode.Uri.joinPath(currentFileUri, '..')
-      
+
       // 验证和解析路径
       const targetFile = this.validateAndResolvePath(currentDir, filePath)
       if (!targetFile) {
@@ -429,10 +436,15 @@ export class MarkdownPreviewProvider implements vscode.WebviewPanelSerializer {
 
     // 监听主题变化
     disposables.push(
-      configService.onConfigChange<string>('currentTheme', (theme) => {
+      configService.onConfigChange<string>('currentTheme', async (theme) => {
         if (this._panel) {
-          logger.info('主题配置发生变化，立即更新主题')
-          this._themeManager.updateTheme(theme)
+          logger.info('主题配置发生变化，立即更新主题并刷新内容')
+          // 更新主题管理器中的主题
+          await this._themeManager.updateTheme(theme)
+          // 强制刷新内容以应用新主题
+          if (this._contentManager.getCurrentDocument()) {
+            await this._contentManager.forceUpdateContent(this._contentManager.getCurrentDocument()!)
+          }
         }
       }),
     )

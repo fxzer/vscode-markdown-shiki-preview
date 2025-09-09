@@ -1,18 +1,16 @@
 import chroma from 'chroma-js'
 import { adjustContrastColor, getContrastRatio, isDarkColor } from './color-utils'
 
+const ALPHA = {
+  DARK: [0.05, 0.08, 0.12, 0.16, 0.20],
+  LIGHT: [0.04, 0.07, 0.10, 0.13, 0.16],
+}
 // 定义回退颜色常量
 const DARK_FALLBACKS = {
   tableHeader: '#2d3748',
   codeBlock: '#1a202c',
   tableBorder: 'rgba(255, 255, 255, 0.3)',
-  blockQuoteBackgrounds: [
-    'rgba(255, 255, 255, 0.05)',
-    'rgba(255, 255, 255, 0.08)',
-    'rgba(255, 255, 255, 0.12)',
-    'rgba(255, 255, 255, 0.16)',
-    'rgba(255, 255, 255, 0.20)',
-  ],
+  blockQuoteBackgrounds: ALPHA.DARK.map(alpha => `rgba(255, 255, 255, ${alpha})`),
   blockQuoteBorder: 'rgba(255, 255, 255, 0.3)',
 }
 
@@ -20,13 +18,7 @@ const LIGHT_FALLBACKS = {
   tableHeader: '#f7fafc',
   codeBlock: '#f7fafc',
   tableBorder: 'rgba(0, 0, 0, 0.3)',
-  blockQuoteBackgrounds: [
-    'rgba(74, 85, 104, 0.04)',
-    'rgba(74, 85, 104, 0.07)',
-    'rgba(74, 85, 104, 0.10)',
-    'rgba(74, 85, 104, 0.13)',
-    'rgba(74, 85, 104, 0.16)',
-  ],
+  blockQuoteBackgrounds: ALPHA.LIGHT.map(alpha => `rgba(74, 85, 104, ${alpha})`),
   blockQuoteBorder: 'rgba(0, 0, 0, 0.3)',
 }
 
@@ -119,22 +111,10 @@ export function generateBlockquoteColors(baseColor: string, levels: number = 5):
     console.error('生成blockquote颜色失败:', error)
     const isDark = isDarkColor(baseColor)
     if (isDark) {
-      return [
-        'rgba(255, 255, 255, 0.05)',
-        'rgba(255, 255, 255, 0.08)',
-        'rgba(255, 255, 255, 0.12)',
-        'rgba(255, 255, 255, 0.16)',
-        'rgba(255, 255, 255, 0.20)',
-      ]
+      return DARK_FALLBACKS.blockQuoteBackgrounds
     }
     else {
-      return [
-        'rgba(74, 85, 104, 0.04)',
-        'rgba(74, 85, 104, 0.07)',
-        'rgba(74, 85, 104, 0.10)',
-        'rgba(74, 85, 104, 0.13)',
-        'rgba(74, 85, 104, 0.16)',
-      ]
+      return LIGHT_FALLBACKS.blockQuoteBackgrounds
     }
   }
 }
@@ -198,32 +178,6 @@ export function generateSelectionBackgroundColor(
   }
 }
 
-export function generateBrightenedForegroundColor(
-  themeName: string,
-  backgroundColor: string,
-  originalForeground: string,
-): string {
-  const themesThatNeedBrightening = [
-    'synthwave-84',
-    'min-dark',
-    'aurora-x',
-  ]
-
-  if (!themesThatNeedBrightening.includes(themeName)) {
-    return originalForeground
-  }
-
-  try {
-    const fgColor = chroma(originalForeground)
-    const brightenedColor = fgColor.brighten(1.5)
-    return brightenedColor.hex()
-  }
-  catch (error) {
-    console.warn(`生成提亮前景色失败 (${themeName}):`, error)
-    return isDarkColor(backgroundColor) ? '#E4E4E4' : originalForeground
-  }
-}
-
 export function generateEnhancedColors(
   themeColors: Record<string, string>,
   isDark: boolean,
@@ -236,16 +190,14 @@ export function generateEnhancedColors(
   enhanced['markdown.tableHeader.background'] = adjustContrastColor(background)
   enhanced['markdown.codeBlock.background'] = adjustContrastColor(background)
 
-  const textLinkForeground = themeColors['textLink.foreground'] || (isDark ? '#4fc3f7' : '#0969da')
+  const textLinkForeground = themeColors['textLink.foreground'] || '#0969da'
   const codeBackground = chroma(textLinkForeground).alpha(0.2).css()
   enhanced['markdown.code.background'] = codeBackground
 
   const blockquoteColors = generateBlockquoteColors(background, 5)
-  enhanced['markdown.blockQuote.background.level1'] = blockquoteColors[0]
-  enhanced['markdown.blockQuote.background.level2'] = blockquoteColors[1]
-  enhanced['markdown.blockQuote.background.level3'] = blockquoteColors[2]
-  enhanced['markdown.blockQuote.background.level4'] = blockquoteColors[3]
-  enhanced['markdown.blockQuote.background.level5'] = blockquoteColors[4]
+  for (let i = 0; i < 5; i++) {
+    enhanced[`markdown.blockQuote.background.level${i + 1}`] = blockquoteColors[i]
+  }
   enhanced['markdown.blockQuote.background'] = blockquoteColors[0]
 
   const originalBorderColor = themeColors['panel.border']

@@ -317,6 +317,8 @@ export class ThemeManager {
 
   /**
    * 更新主题
+   * 简化版本：只负责加载新主题资源和更新内部状态
+   * 界面刷新完全依赖 preview-provider.ts 中的配置监听器
    */
   public async updateTheme(theme: string): Promise<void> {
     try {
@@ -351,76 +353,21 @@ export class ThemeManager {
         }
       }
 
-      // 强制更新主题，无论是否发生变化
+      // 更新内部状态
       this._currentShikiTheme = theme
       this._themeChanged = true // 标记主题已更改，强制重新渲染
 
       logger.info('[updateTheme] Updated _currentShikiTheme:', this._currentShikiTheme)
       logger.info('[updateTheme] _themeChanged:', this._themeChanged)
 
+      // 更新 Markdown 渲染器以使用新主题
       if (this._highlighter) {
         this.setupMarkdownRenderer()
       }
 
-      // 如果预览窗口存在，立即更新预览内容
-      if (this._panel && this._currentDocument) {
-        logger.info('[updateTheme] Updating preview content...')
-
-        // 直接调用 content-manager 的 updateContent 方法，确保配置状态同步
-        try {
-          // 通过 content-manager 更新内容，确保配置状态跟踪正确
-          // 这里我们需要一个引用到 content-manager，但现在我们直接更新内容
-          const content = this._currentDocument.getText()
-          const parsed = matter.default(content)
-          const markdownContent = parsed.content
-
-          const html = await this.renderMarkdown(markdownContent)
-
-          // 获取配置
-          const fontSize = configService.getFontSize(this._currentDocument.uri)
-          const lineHeight = configService.getLineHeight(this._currentDocument.uri)
-          const fontFamily = configService.getFontFamily(this._currentDocument.uri)
-          const documentWidth = configService.getDocumentWidth(this._currentDocument.uri)
-
-          // 生成新的HTML
-          const themeRenderer = this.getThemeRenderer()
-          const themeStyles = themeRenderer.getThemeCSS(this._currentShikiTheme, {
-            fontSize,
-            lineHeight,
-            fontFamily,
-            documentWidth,
-          })
-
-          // 只有在面板仍然有效时才更新webview内容
-          if (this._panel) {
-            this._panel.webview.html = this.generateHtmlForWebview(html, {
-              theme: this._currentShikiTheme,
-              themeStyles,
-              fontSize,
-              lineHeight,
-              fontFamily,
-              documentWidth,
-            })
-            logger.info('[updateTheme] Preview content updated successfully')
-          }
-          else {
-            logger.info('面板已销毁，跳过webview内容更新')
-          }
-        }
-        catch (error) {
-          logger.error('[updateTheme] Error updating preview content:', error)
-          // 只有在面板仍然有效时才尝试重新加载内容
-          if (this._panel) {
-            this._panel.webview.postMessage({
-              command: 'reloadContent',
-              theme: this._currentShikiTheme,
-            })
-          }
-          else {
-            logger.info('面板已销毁，跳过重新加载内容')
-          }
-        }
-      }
+      // 注意：不再手动更新 Webview HTML
+      // 界面刷新完全依赖 preview-provider.ts 中的配置监听器
+      logger.info('[updateTheme] Theme updated, waiting for configuration listener to trigger UI refresh')
     }
     catch (error) {
       logger.error('更新主题失败:', error)
@@ -431,51 +378,6 @@ export class ThemeManager {
       }
       else {
         logger.info('面板已销毁，跳过主题更新错误消息显示')
-      }
-
-      // 恢复到之前的主题
-      if (this._panel && this._currentDocument) {
-        try {
-          // 重新生成内容以恢复之前的主题
-          const content = this._currentDocument.getText()
-          const parsed = matter.default(content)
-          const markdownContent = parsed.content
-
-          const html = await this.renderMarkdown(markdownContent)
-
-          // 获取配置
-          const fontSize = configService.getFontSize(this._currentDocument.uri)
-          const lineHeight = configService.getLineHeight(this._currentDocument.uri)
-          const fontFamily = configService.getFontFamily(this._currentDocument.uri)
-          const documentWidth = configService.getDocumentWidth(this._currentDocument.uri)
-
-          // 生成新的HTML
-          const themeRenderer = this.getThemeRenderer()
-          const themeStyles = themeRenderer.getThemeCSS(this._currentShikiTheme, {
-            fontSize,
-            lineHeight,
-            fontFamily,
-            documentWidth,
-          })
-
-          // 只有在面板仍然有效时才更新webview内容
-          if (this._panel) {
-            this._panel.webview.html = this.generateHtmlForWebview(html, {
-              theme: this._currentShikiTheme,
-              themeStyles,
-              fontSize,
-              lineHeight,
-              fontFamily,
-              documentWidth,
-            })
-          }
-          else {
-            logger.info('面板已销毁，跳过恢复主题的webview内容更新')
-          }
-        }
-        catch (recoveryError) {
-          logger.error('恢复主题失败:', recoveryError)
-        }
       }
     }
   }

@@ -144,21 +144,7 @@ gantt
     用户验收测试       :d3, after d2, 5d
 ```
 
-## 四象限图 (Quadrant Chart)
-```mermaid
-quadrantChart
-    title 产品优先级矩阵
-    x-axis 成本低 --> 成本高
-    y-axis 价值低 --> 价值高
-    quadrant-1 高价值，低成本
-    quadrant-2 高价值，高成本
-    quadrant-3 低价值，高成本
-    quadrant-4 低价值，低成本
-    "功能A": [0.3, 0.8]
-    "功能B": [0.7, 0.6]
-    "功能C": [0.2, 0.2]
-    "功能D": [0.8, 0.3]
-```
+
 
 ## 旅程图 (Journey)
 ```mermaid
@@ -192,55 +178,6 @@ timeline
       第二季度 : 功能扩展
 ```
 
-## 资源图 (Resource Graph)
-```mermaid
-resourceDiagram
-    title 服务器资源分配
-    resource Web服务器 {
-        CPU 80%
-        内存 70%
-        磁盘 50%
-    }
-    resource 数据库服务器 {
-        CPU 60%
-        内存 85%
-        磁盘 90%
-    }
-    resource 缓存服务器 {
-        CPU 30%
-        内存 65%
-        磁盘 20%
-    }
-```
-
-## 需求图 (Requirement Diagram)
-```mermaid
-requirementDiagram
-    requirement 系统功能 {
-        id: 1
-        text: 系统必须支持用户注册和登录
-        risk: high
-        verifyMethod: test
-    }
-
-    requirement 性能要求 {
-        id: 2
-        text: 系统响应时间必须小于2秒
-        risk: medium
-        verifyMethod: test
-    }
-
-    element 用户模块 {
-        type: 模块
-    }
-
-    element 数据库 {
-        type: 组件
-    }
-
-    系统功能 - satisfies -> 用户模块
-    性能要求 - satisfies -> 数据库
-```
 
 ## C4 图表 (C4 Diagram)
 ```mermaid
