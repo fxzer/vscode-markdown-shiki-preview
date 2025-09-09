@@ -8,7 +8,7 @@ import * as vscode from 'vscode'
 import { configService } from './config-service'
 import { generateHtmlTemplate } from './html-template'
 import { ThemeRenderer } from './theme-renderer'
-import { logger } from './utils'
+import { getNonce, logger } from './utils'
 
 /**
  * 主题管理器
@@ -652,7 +652,7 @@ export class ThemeManager {
     fontFamily: string
     documentWidth: string
   }): string {
-    const nonce = this.getNonce()
+    const nonce = getNonce()
 
     return generateHtmlTemplate({
       content,
@@ -662,18 +662,6 @@ export class ThemeManager {
       documentWidth: config.documentWidth,
       hasMermaid: false, // 主题管理器不处理Mermaid，由内容管理器处理
     })
-  }
-
-  /**
-   * 生成一个随机的 nonce 字符串
-   * 用于 Content Security Policy (CSP) 中的脚本安全验证
-   */
-  private getNonce(): string {
-    const possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
-    const possibleLength = possible.length
-
-    return Array.from({ length: 32 }, () =>
-      possible.charAt(Math.floor(Math.random() * possibleLength))).join('')
   }
 
   /**

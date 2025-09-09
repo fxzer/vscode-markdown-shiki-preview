@@ -3,7 +3,7 @@ import { debounce } from 'lodash-es'
 import * as vscode from 'vscode'
 import { configService } from './config-service'
 import { generateHtmlTemplate } from './html-template'
-import { logger } from './utils'
+import { getNonce, logger } from './utils'
 
 /**
  * 内容管理器
@@ -161,7 +161,7 @@ export class ContentManager {
         logger.info('[updateContent] Panel is disposed, skipping incremental update')
         return
       }
-      
+
       logger.info('[updateContent] Sending incremental update to webview')
       progress?.report({ increment: 80, message: '更新预览内容...' })
       this._panel.webview.postMessage({
@@ -192,7 +192,7 @@ export class ContentManager {
           logger.info('[updateContent] Panel is disposed, skipping full HTML update')
           return
         }
-        
+
         this._panel.webview.html = this.getHtmlForWebview(htmlContent, {
           theme: currentTheme,
           fontSize,
@@ -204,7 +204,7 @@ export class ContentManager {
       }
       catch (error) {
         logger.error('生成 HTML 预览失败:', error)
-        
+
         // 只有在面板仍然有效时才显示错误消息
         if (this._panel) {
           vscode.window.showErrorMessage('生成预览内容失败，请检查主题配置')
@@ -229,10 +229,12 @@ export class ContentManager {
                 this._panel.webview.html = `<html><body><h2>预览生成失败</h2><p>错误: ${error instanceof Error ? error.message : '未知错误'}</p></body></html>`
               }
             }
-          } else {
+          }
+          else {
             logger.info('面板已销毁，跳过默认主题重试')
           }
-        } else {
+        }
+        else {
           logger.info('面板已销毁，跳过错误处理和重试')
         }
       }
@@ -259,11 +261,12 @@ export class ContentManager {
     }
     catch (error) {
       logger.error('内容更新失败:', error)
-      
+
       // 只有在面板仍然有效时才显示错误消息
       if (this._panel) {
         vscode.window.showErrorMessage('Markdown 预览内容更新失败，请检查文件格式')
-      } else {
+      }
+      else {
         logger.info('面板已销毁，跳过错误消息显示')
       }
     }
@@ -280,7 +283,7 @@ export class ContentManager {
     documentWidth: string
     hasMermaid: boolean
   }): string {
-    const nonce = this.getNonce()
+    const nonce = getNonce()
     const themeRenderer = this._themeManager.getThemeRenderer()
     const themeStyles = themeRenderer.getThemeCSS(config.theme, {
       fontSize: config.fontSize,
@@ -297,18 +300,6 @@ export class ContentManager {
       documentWidth: config.documentWidth,
       hasMermaid: config.hasMermaid,
     })
-  }
-
-  /**
-   * 生成一个随机的 nonce 字符串
-   * 用于 Content Security Policy (CSP) 中的脚本安全验证
-   */
-  private getNonce(): string {
-    const possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
-    const possibleLength = possible.length
-
-    return Array.from({ length: 32 }, () =>
-      possible.charAt(Math.floor(Math.random() * possibleLength))).join('')
   }
 
   /**
